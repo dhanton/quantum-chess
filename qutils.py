@@ -28,56 +28,16 @@ def perform_standard_jump(board, source, target):
 
     board.qcircuit.unitary(iSwap, [qsource, qtarget], label='iSwap')
 
-def perform_blocked_jump(board, source, target):
-    qsource = board.get_qubit(source.x, source.y)
-    qtarget = board.get_qubit(target.x, target.y)
-
-    #get the ancilla qubit and set it to |0>
-    ancilla = board.aregister[0]
-    board.qcircuit.reset(ancilla)
-    
-    board.qcircuit.x(qtarget)
-    board.qcircuit.cx(qtarget, ancilla)
-    board.qcircuit.x(qtarget)
-
-    board.qcircuit.measure(ancilla, board.cregister[0])
-
-    #perform quantum move only if no piece is blocking
-    board.qcircuit.unitary(iSwap, [qsource, qtarget], label='iSwap').c_if(board.cregister, 1)
-
-    result = execute(board.qcircuit, backend=backend, shots=1).result()
-    
-    #read the value of the classical bit after execution
-    #TODO: Obtain this value in a more elegant way
-    #      Right now it ONLY works when shots=1
-    cbit_value = int(list(result.get_counts().keys())[0])
-
-    return (cbit_value == 1)
-
 def perform_capture_jump(board, source, target):
     qsource = board.get_qubit(source.x, source.y)
     qtarget = board.get_qubit(target.x, target.y)
 
-    #get the ancilla qubit and reset it to |0>
-    ancilla = board.aregister[0]
-    board.qcircuit.reset(ancilla)
-
-    #this other ancilla is gonna be used to hold the captured piece
-    captured_piece = board.aregister[1]
+    #this ancilla qubit is going to hold the captured piece
+    captured_piece = board.aregister[0]
     board.qcircuit.reset(captured_piece)
 
-    board.qcircuit.cx(qsource, ancilla)
-
-    board.qcircuit.measure(ancilla, board.cregister[0])
-
-    #perform quantum move if capturing piece is in source
-    board.qcircuit.unitary(iSwap, [qtarget, captured_piece], label='iSwap').c_if(board.cregister, 1)
-    board.qcircuit.unitary(iSwap, [qsource, qtarget], label='iSwap').c_if(board.cregister, 1)
-
-    result = execute(board.qcircuit, backend=backend, shots=1).result()
-    cbit_value = int(list(result.get_counts().keys())[0])
-
-    return (cbit_value == 1)
+    board.qcircuit.unitary(iSwap, [qtarget, captured_piece], label='iSwap')
+    board.qcircuit.unitary(iSwap, [qsource, qtarget], label='iSwap')
 
 def perform_split_jump(board, source, target1, target2):
     qsource = board.get_qubit(source.x, source.y)

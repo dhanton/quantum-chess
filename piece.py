@@ -10,6 +10,7 @@ class PieceType(Enum):
     KING = 5
 
 class Color(Enum):
+    NONE = -1,
     BLACK = 0,
     WHITE = 1
 
@@ -52,4 +53,5 @@ class Piece:
         else:
             return False
 
-NullPiece = Piece(PieceType.NONE, Color.WHITE)
+NullPiece = Piece(PieceType.NONE, Color.NONE)
+NullPiece.qhash = 0

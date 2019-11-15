@@ -13,6 +13,7 @@ class Point:
 
 class Board:
     def __init__(self, width, height):
+        self.qhash_index = 0
         self.width = width
         self.height = height
 
@@ -24,8 +25,8 @@ class Board:
         #ancilla qubits used for intermediate operations
         self.aregister = QuantumRegister(4)
         
-        #classical bit used as control
-        self.cregister = ClassicalRegister(1)
+        #classical bit to collapse each square individually
+        self.cregister = ClassicalRegister(width * height)
 
         self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.cregister)
 
@@ -45,11 +46,21 @@ class Board:
             return True
         return False
 
-    def get_qubit_index(self, x, y):
+    def get_array_index(self, x, y):
         return self.height * y + x
 
+    def get_board_point(self, index):
+        return Point(index%self.width, int(index/self.height))
+
     def get_qubit(self, x, y):
-        return self.qregister[self.get_qubit_index(x, y)]
+        return self.qregister[self.get_array_index(x, y)]
+
+    def get_bit(self, x, y):
+        return self.cregister[self.get_array_index(x, y)]
+
+    def get_piece(self, index):
+        pos = self.get_board_point(index)
+        return self.classical_board[pos.x][pos.y]
 
     def add_piece(self, x, y, piece):
         if not self.in_bounds(x, y): return
@@ -58,12 +69,35 @@ class Board:
             print("add piece error - there is already a piece in that position")
             return
 
+        piece.qhash = 1 << self.qhash_index
+        self.qhash_index += 1
+
         self.classical_board[x][y] = piece
 
         #the value is already |0> (no piece)
         #since we want to add the piece with 100% probability, we swap to |1>
-        q1 = self.qregister[self.get_qubit_index(x, y)]
+        q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
+
+    def collapse_by_hash(self, qhash):
+        collapsed_indices = []
+
+        for i in range(self.width * self.height):
+            piece = self.get_piece(i)
+
+            if piece != NullPiece and piece.qhash & qhash != 0:
+                #measure the ith qubit to the ith bit
+                self.qcircuit.measure(i, i)
+                collapsed_indices.append(i)
+        
+        result = execute(self.qcircuit, backend=qutils.backend, shots=1).result()
+        bitstring = list(result.get_counts().keys())[0]
+
+        for i, char in enumerate(bitstring[::-1]):
+            if char == '0' and i in collapsed_indices:
+                pos = self.get_board_point(i)
+                self.classical_board[pos.x][pos.y] = NullPiece
+
 
     def ascii_render(self):
         s = ""
@@ -114,15 +148,19 @@ class Board:
             self.classical_board[target.x][target.y] = piece
         else:
             if target_piece.color == piece.color:
-                success = qutils.perform_blocked_jump(self, source, target)
+                self.collapse_by_hash(target_piece.qhash)
 
-                if success:
+                if self.classical_board[target.x][target.y] == NullPiece:
+                    qutils.perform_standard_jump(self, source, target)
+
                     self.classical_board[source.x][source.y] = NullPiece
                     self.classical_board[target.x][target.y] = piece
             else:
-                success = qutils.perform_capture_jump(self, source, target)
+                self.collapse_by_hash(piece.qhash)
 
-                if success:
+                if self.classical_board[source.x][source.y] != NullPiece:
+                    qutils.perform_capture_jump(self, source, target)
+
                     self.classical_board[source.x][source.y] = NullPiece
                     self.classical_board[target.x][target.y] = piece
 

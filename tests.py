@@ -116,19 +116,32 @@ class TestBoard(unittest.TestCase):
         self.assertFalse(board.is_occupied(1, 0))
         self.assertFalse(board.is_occupied(1, 1))
 
-    def test_get_qubit_index(self):
+    def test_get_array_index(self):
         #there are 9 qubits, indexed 0...8
         board = Board(3, 3)
 
-        self.assertIs(board.get_qubit_index(0, 0), 0)
-        self.assertIs(board.get_qubit_index(1, 0), 1)
-        self.assertIs(board.get_qubit_index(2, 0), 2)
-        self.assertIs(board.get_qubit_index(0, 1), 3)
-        self.assertIs(board.get_qubit_index(1, 1), 4)
-        self.assertIs(board.get_qubit_index(2, 1), 5)
-        self.assertIs(board.get_qubit_index(0, 2), 6)
-        self.assertIs(board.get_qubit_index(1, 2), 7)
-        self.assertIs(board.get_qubit_index(2, 2), 8)
+        self.assertEqual(board.get_array_index(0, 0), 0)
+        self.assertEqual(board.get_array_index(1, 0), 1)
+        self.assertEqual(board.get_array_index(2, 0), 2)
+        self.assertEqual(board.get_array_index(0, 1), 3)
+        self.assertEqual(board.get_array_index(1, 1), 4)
+        self.assertEqual(board.get_array_index(2, 1), 5)
+        self.assertEqual(board.get_array_index(0, 2), 6)
+        self.assertEqual(board.get_array_index(1, 2), 7)
+        self.assertEqual(board.get_array_index(2, 2), 8)
+        
+    def test_get_board_point(self):
+        board = Board(3, 3)
+
+        self.assertEqual(board.get_board_point(0), Point(0, 0))
+        self.assertEqual(board.get_board_point(1), Point(1, 0))
+        self.assertEqual(board.get_board_point(2), Point(2, 0))
+        self.assertEqual(board.get_board_point(3), Point(0, 1))
+        self.assertEqual(board.get_board_point(4), Point(1, 1))
+        self.assertEqual(board.get_board_point(5), Point(2, 1))
+        self.assertEqual(board.get_board_point(6), Point(0, 2))
+        self.assertEqual(board.get_board_point(7), Point(1, 2))
+        self.assertEqual(board.get_board_point(8), Point(2, 2))
         
 
 if __name__ == "__main__":

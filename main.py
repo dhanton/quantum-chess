@@ -5,7 +5,8 @@ import signal
 import sys
 
 def test_game():
-    board = Board(4, 4)
+    size = 4
+    board = Board(size, size)
     board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
     board.add_piece(3, 3, Piece(PieceType.KING, Color.BLACK))
 
@@ -26,8 +27,8 @@ def test_game():
 
         if len(command) == 4:
             #standard jump
-            source = Point(ord(command[0]) - 97, 4 - int(command[1]))
-            target = Point(ord(command[2]) - 97, 4 - int(command[3]))
+            source = Point(ord(command[0]) - 97, size - int(command[1]))
+            target = Point(ord(command[2]) - 97, size - int(command[3]))
 
             if board.classical_board[source.x][source.y].color != current_player:
                 print('Invalid piece color')
@@ -39,9 +40,9 @@ def test_game():
         elif len(command) == 7:
             if command[2] == '^':
                 #split
-                source = Point(ord(command[0]) - 97, 4 - int(command[1]))
-                target1 = Point(ord(command[3]) - 97, 4 - int(command[4]))
-                target2 = Point(ord(command[5]) - 97, 4 - int(command[6]))
+                source = Point(ord(command[0]) - 97, size - int(command[1]))
+                target1 = Point(ord(command[3]) - 97, size - int(command[4]))
+                target2 = Point(ord(command[5]) - 97, size - int(command[6]))
 
                 if board.classical_board[source.x][source.y].color != current_player:
                     print('Invalid piece color')
@@ -72,7 +73,6 @@ def main():
         Can it still be used afterwards?
         Add these tests in tests.py
     """
-
 
 if __name__ == "__main__":
     main()
