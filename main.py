@@ -1,4 +1,4 @@
-from board import *
+from qchess.board import *
 import os
 
 import signal
