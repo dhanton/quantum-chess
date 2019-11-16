@@ -1,7 +1,7 @@
 from qiskit import *
 
-import qutils
-from piece import *
+from . import qutils
+from .piece import *
 
 class Point:
     def __init__(self, x, y):
@@ -32,11 +32,9 @@ class Board:
 
     def in_bounds(self, x, y):
         if x < 0 or x >= self.width:
-            print("Check range Warning - x out of bounds")
             return False
         
         if y < 0 or y >= self.height:
-            print("Check range Warning - y out of bounds")
             return False
 
         return True
@@ -113,7 +111,18 @@ class Board:
 
         print(s)
 
-    def standard_move(self, source, target):
+    def get_simplified_matrix(self):
+        m = []
+
+        for j in range(self.height):
+            row = []
+            for i in range(self.width):
+                row.append(self.classical_board[i][j].as_notation())
+            m.append(row)
+
+        return m
+
+    def standard_move(self, source, target, force=False):
         if not self.in_bounds(source.x, source.y):
             print('Invalid move - Source square not in bounds')
             return False
@@ -128,7 +137,7 @@ class Board:
 
         piece = self.classical_board[source.x][source.y]    
 
-        if not piece.is_move_valid(source, target):
+        if not force and not piece.is_move_valid(source, target):
             print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
             return False
 
@@ -166,7 +175,7 @@ class Board:
 
         return True
 
-    def split_move(self, source, target1, target2):
+    def split_move(self, source, target1, target2, force=False):
         if not self.in_bounds(source.x, source.y):
             print('Invalid move - Source square not in bounds')
             return False
@@ -185,7 +194,7 @@ class Board:
         
         piece = self.classical_board[source.x][source.y]
 
-        if not piece.is_move_valid(source, target1) or not piece.is_move_valid(source, target2):
+        if not force and (not piece.is_move_valid(source, target1) or not piece.is_move_valid(source, target2)):
             print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
             return False
 
@@ -210,7 +219,7 @@ class Board:
 
         return True
     
-    def merge_move(self, source1, source2, target):
+    def merge_move(self, source1, source2, target, force=False):
         if not self.in_bounds(source1.x, source1.y):
             print('Invalid move - Source square not in bounds')
             return False
@@ -234,7 +243,7 @@ class Board:
             print('Invalid move - Different type of merge source pieces')
             return False
 
-        if not piece1.is_move_valid(source1, target) or not piece2.is_move_valid(source2, target):
+        if not force and (not piece1.is_move_valid(source1, target) or not piece2.is_move_valid(source2, target)):
             print('Invalid move - Incorrect move for piece type ' + piece1.type.lower())
             return False
 

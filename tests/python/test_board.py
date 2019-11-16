@@ -1,6 +1,6 @@
 import unittest
 
-from board import *
+from qchess.board import *
 
 class TestPiece(unittest.TestCase):
     def test_equality(self):
@@ -142,7 +142,21 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board.get_board_point(6), Point(0, 2))
         self.assertEqual(board.get_board_point(7), Point(1, 2))
         self.assertEqual(board.get_board_point(8), Point(2, 2))
+
+    def test_simplified_matrix(self):
+        board = Board(3, 3)
+        board.add_piece(1, 0, Piece(PieceType.BISHOP, Color.BLACK))
+        board.add_piece(1, 1, Piece(PieceType.KING, Color.WHITE))
+        board.add_piece(2, 1, Piece(PieceType.PAWN, Color.WHITE))
+        board.add_piece(0, 2, Piece(PieceType.QUEEN, Color.BLACK))
+
+        result = [
+            ['0', 'b', '0'],
+            ['0', 'K', 'P'],
+            ['q', '0', '0'],
+        ]
         
+        self.assertEqual(board.get_simplified_matrix(), result)
 
 if __name__ == "__main__":
     unittest.main()
