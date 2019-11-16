@@ -55,6 +55,14 @@ class TestPiece(unittest.TestCase):
             [0, 0, 0, 0, 0],
         ]
 
+        moves[PieceType.KNIGHT] = [
+            [0, 1, 0, 1, 0],
+            [1, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 1],
+            [0, 1, 0, 1, 0],
+        ]
+
         for x in range(25):
             i = x%5
             j = int(x/5)

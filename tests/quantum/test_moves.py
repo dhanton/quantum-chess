@@ -3,7 +3,7 @@ import unittest
 from qchess.board import *
 from .quantum_test_engine import QuantumTestEngine
 
-class TestKing(unittest.TestCase):
+class TestJumpMoves(unittest.TestCase):
     def test_split_move(self):
         engine = QuantumTestEngine()
         engine.add_board_state(

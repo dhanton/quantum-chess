@@ -8,7 +8,7 @@ def test_game():
     size = 4
     board = Board(size, size)
     board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-    board.add_piece(3, 3, Piece(PieceType.KING, Color.BLACK))
+    board.add_piece(3, 3, Piece(PieceType.KNIGHT, Color.BLACK))
 
     current_player = Color.WHITE
 

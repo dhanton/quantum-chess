@@ -1,4 +1,5 @@
 from enum import Enum
+from .point import Point
 
 class PieceType(Enum):
     NONE = -1,
@@ -47,8 +48,20 @@ class Piece:
         
         if self.type == PieceType.KING:
             return abs(target.y - source.y) <= 1 and abs(target.x - source.x) <= 1
+        elif self.type == PieceType.KNIGHT:
+            #not super pretty, but I don't see why not make it the simple way
+            if source + Point(1, -2) == target: return True
+            if source + Point(2, -1) == target: return True
+            if source + Point(2, 1) == target: return True
+            if source + Point(1, 2) == target: return True
+            if source + Point(-1, 2) == target: return True
+            if source + Point(-2, 1) == target: return True
+            if source + Point(-2, -1) == target: return True
+            if source + Point(-1, -2) == target: return True
+            return False
         else:
             return False
+        
 
 NullPiece = Piece(PieceType.NONE, Color.NONE)
 NullPiece.qhash = 0
