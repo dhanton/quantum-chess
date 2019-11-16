@@ -46,10 +46,7 @@ class Piece:
             return False
         
         if self.type == PieceType.KING:
-            if abs(target.y - source.y) <= 1 and abs(target.x - source.x) <= 1:
-                return True
-            else:
-                return False
+            return abs(target.y - source.y) <= 1 and abs(target.x - source.x) <= 1
         else:
             return False
 

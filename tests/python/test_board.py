@@ -62,7 +62,8 @@ class TestPiece(unittest.TestCase):
 
             for t in PieceType:
                 if not t in moves: continue
-                self.assertEqual(Piece(t, Color.WHITE).is_move_valid(source, target), moves[t][i][j])
+                msg = t.name + ' is_move_valid from ' + str(source) + ' to ' + str(target)
+                self.assertEqual(Piece(t, Color.WHITE).is_move_valid(source, target), moves[t][i][j], msg=msg)
 
 class TestBoard(unittest.TestCase):
     def test_classical_board(self):
@@ -70,7 +71,7 @@ class TestBoard(unittest.TestCase):
         board = Board(3, 3)
         self.assertEqual(board.classical_board[1][1], NullPiece)
         board.classical_board[0][2] = Piece(PieceType.KING, Color.BLACK)
-        self.assertTrue(board.classical_board[0][2])
+        self.assertNotEqual(board.classical_board[0][2], NullPiece)
         
         with self.assertRaises(IndexError):
             board.classical_board[0][3]
@@ -82,7 +83,7 @@ class TestBoard(unittest.TestCase):
         board = Board(5, 1)
         self.assertEqual(board.classical_board[4][0], NullPiece)
         board.classical_board[3][0] = Piece(PieceType.KING, Color.BLACK)
-        self.assertTrue(board.classical_board[3][0])
+        self.assertNotEqual(board.classical_board[3][0], NullPiece)
         
         with self.assertRaises(IndexError):
             board.classical_board[0][1]
