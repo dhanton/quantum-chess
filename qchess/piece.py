@@ -64,4 +64,4 @@ class Piece:
         
 
 NullPiece = Piece(PieceType.NONE, Color.NONE)
-NullPiece.qhash = 0
+NullPiece.qflag = 0

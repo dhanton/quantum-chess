@@ -6,7 +6,7 @@ from .piece import *
 
 class Board:
     def __init__(self, width, height):
-        self.qhash_index = 0
+        self.qflag_index = 0
         self.width = width
         self.height = height
 
@@ -60,8 +60,8 @@ class Board:
             print("add piece error - there is already a piece in that position")
             return
 
-        piece.qhash = 1 << self.qhash_index
-        self.qhash_index += 1
+        piece.qflag = 1 << self.qflag_index
+        self.qflag_index += 1
 
         self.classical_board[x][y] = piece
 
@@ -70,13 +70,31 @@ class Board:
         q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
 
-    def collapse_by_hash(self, qhash):
+    def entangle_flags(self, qflag1, qflag2):
+        #nullpiece
+        if not qflag1 or not qflag2:
+            return
+
+        #already entangled
+        if qflag1 & qflag2 != 0:
+            return
+
+        for i in range(self.width * self.height):
+            piece = self.get_piece(i)
+
+            if piece.qflag & qflag1 != 0:
+                piece.qflag |= qflag2
+
+            elif piece.qflag & qflag2 != 0:
+                piece.qflag |= qflag1
+
+    def collapse_by_flag(self, qflag):
         collapsed_indices = []
 
         for i in range(self.width * self.height):
             piece = self.get_piece(i)
 
-            if piece != NullPiece and piece.qhash & qhash != 0:
+            if piece != NullPiece and piece.qflag & qflag != 0:
                 #measure the ith qubit to the ith bit
                 self.qcircuit.measure(i, i)
                 collapsed_indices.append(i)
@@ -150,7 +168,7 @@ class Board:
             self.classical_board[target.x][target.y] = piece
         else:
             if target_piece.color == piece.color:
-                self.collapse_by_hash(target_piece.qhash)
+                self.collapse_by_flag(target_piece.qflag)
 
                 if self.classical_board[target.x][target.y] == NullPiece:
                     qutils.perform_standard_jump(self, source, target)
@@ -158,7 +176,7 @@ class Board:
                     self.classical_board[source.x][source.y] = NullPiece
                     self.classical_board[target.x][target.y] = piece
             else:
-                self.collapse_by_hash(piece.qhash)
+                self.collapse_by_flag(piece.qflag)
 
                 if self.classical_board[source.x][source.y] != NullPiece:
                     qutils.perform_capture_jump(self, source, target)
@@ -204,6 +222,9 @@ class Board:
 
         qutils.perform_split_jump(self, source, target1, target2)
 
+        #we only entangle flags between the qubits to which we apply iswap_sqrt
+        self.entangle_flags(piece.qflag, target_piece1.qflag)
+
         self.classical_board[target1.x][target1.y] = piece
         self.classical_board[target2.x][target2.y] = piece
 
@@ -247,6 +268,9 @@ class Board:
             return False
 
         qutils.perform_merge_jump(self, source1, source2, target)
+
+        #we only entangle flags between the qubits to which we apply iswap_sqrt
+        self.entangle_flags(piece1.qflag, piece2.qflag)
 
         self.classical_board[target.x][target.y] = piece1
 
