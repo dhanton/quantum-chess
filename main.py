@@ -4,11 +4,58 @@ import os
 import signal
 import sys
 
+def is_game_over(board):
+    black_king_count = 0
+    white_king_count = 0
+
+    msg = None
+
+    for i in range(board.width * board.height):
+        piece = board.get_piece(i)
+
+        if piece.type == PieceType.KING:
+            if piece.color == Color.WHITE:
+                white_king_count += 1
+            elif piece.color == Color.BLACK:
+                black_king_count += 1
+
+    if black_king_count + white_king_count == 0:
+        msg = 'Draw!'
+
+    elif black_king_count == 0:
+        msg = 'White wins!'
+
+    elif white_king_count == 0:
+        msg = 'Black wins!'
+
+    if msg:
+        os.system('clear')
+        board.ascii_render()
+        print(msg)
+
+        return True
+    else:
+        return False
+
+
+def generate_micro_chess():
+    board = Board(4, 5)
+    board.add_piece(0, 0, Piece(PieceType.KING, Color.BLACK))
+    board.add_piece(1, 0, Piece(PieceType.KNIGHT, Color.BLACK))
+    board.add_piece(2, 0, Piece(PieceType.BISHOP, Color.BLACK))
+    board.add_piece(3, 0, Piece(PieceType.ROOK, Color.BLACK))
+    board.add_piece(0, 1, Piece(PieceType.PAWN, Color.BLACK))
+
+    board.add_piece(3, 4, Piece(PieceType.KING, Color.WHITE))
+    board.add_piece(2, 4, Piece(PieceType.KNIGHT, Color.WHITE))
+    board.add_piece(1, 4, Piece(PieceType.BISHOP, Color.WHITE))
+    board.add_piece(0, 4, Piece(PieceType.ROOK, Color.WHITE))
+    board.add_piece(3, 3, Piece(PieceType.PAWN, Color.WHITE))
+
+    return board, 5
+
 def test_game():
-    size = 4
-    board = Board(size, size)
-    board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-    board.add_piece(3, 3, Piece(PieceType.KNIGHT, Color.BLACK))
+    board, height = generate_micro_chess()
 
     current_player = Color.WHITE
 
@@ -27,8 +74,8 @@ def test_game():
 
         if len(command) == 4:
             #standard jump
-            source = Point(ord(command[0]) - 97, size - int(command[1]))
-            target = Point(ord(command[2]) - 97, size - int(command[3]))
+            source = Point(ord(command[0]) - 97, height - int(command[1]))
+            target = Point(ord(command[2]) - 97, height - int(command[3]))
 
             if board.classical_board[source.x][source.y].color != current_player:
                 print('Invalid piece color')
@@ -40,9 +87,9 @@ def test_game():
         elif len(command) == 7:
             if command[2] == '^':
                 #split
-                source = Point(ord(command[0]) - 97, size - int(command[1]))
-                target1 = Point(ord(command[3]) - 97, size - int(command[4]))
-                target2 = Point(ord(command[5]) - 97, size - int(command[6]))
+                source = Point(ord(command[0]) - 97, height - int(command[1]))
+                target1 = Point(ord(command[3]) - 97, height - int(command[4]))
+                target2 = Point(ord(command[5]) - 97, height - int(command[6]))
 
                 if board.classical_board[source.x][source.y].color != current_player:
                     print('Invalid piece color')
@@ -64,15 +111,11 @@ def test_game():
                 if board.merge_move(source1, source2, target):
                     current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
 
+        if is_game_over(board):
+            break
+
 def main():
     test_game()
-
-    """
-    Test multiple combinations of different moves
-        In particular how multiple execute() affect the circuit
-        Can it still be used afterwards?
-        Add these tests in tests.py
-    """
 
 if __name__ == "__main__":
     main()

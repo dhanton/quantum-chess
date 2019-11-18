@@ -41,7 +41,13 @@ class Piece:
 
         return result
 
-    #TODO: Add validation for the other pieces
+    def is_move_slide(self):
+        return (
+            self.type == PieceType.BISHOP or
+            self.type == PieceType.ROOK or
+            self.type == PieceType.QUEEN
+        )
+
     def is_move_valid(self, source, target):
         if source == target:
             return False
@@ -59,6 +65,16 @@ class Piece:
             if source + Point(-2, -1) == target: return True
             if source + Point(-1, -2) == target: return True
             return False
+        elif self.type == PieceType.ROOK:
+            return source.x == target.x or source.y == target.y
+        elif self.type == PieceType.BISHOP:
+            vec = target - source
+            return abs(vec.x) == abs(vec.y)
+        elif self.type == PieceType.QUEEN:
+            return (
+                Piece(PieceType.ROOK, self.color).is_move_valid(source, target) or
+                Piece(PieceType.BISHOP, self.color).is_move_valid(source, target)
+            )
         else:
             return False
         

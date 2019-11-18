@@ -79,7 +79,7 @@ class TestJumpMove(unittest.TestCase):
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 1), Point(1, 2)))
         engine.run_engine(500)
-        engine.run_tests(self, delta=0.05)
+        engine.run_tests(self, delta=0.07)
 
     def test_blocked_move(self):
         engine = QuantumTestEngine()
@@ -119,7 +119,7 @@ class TestJumpMove(unittest.TestCase):
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 2), Point(1, 1)))
         engine.run_engine(500)
-        engine.run_tests(self, delta=0.05)
+        engine.run_tests(self, delta=0.07)
 
     def test_standard_move_to_split(self):
         engine = QuantumTestEngine()
@@ -153,7 +153,7 @@ class TestJumpMove(unittest.TestCase):
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
         engine.run_engine(500)
-        engine.run_tests(self, delta=0.05)
+        engine.run_tests(self, delta=0.07)
 
     def test_merge_of_piece_and_split(self):
         engine = QuantumTestEngine()
@@ -191,12 +191,12 @@ class TestJumpMove(unittest.TestCase):
 
         def action(board):
             board.merge_move(Point(0, 1), Point(0, 2), Point(1, 2))
-            board.collapse_by_flag(0xfffff)
+            board.collapse_by_flag(None, collapse_all=True)
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
         engine.run_engine(500)
-        engine.run_tests(self, delta=0.05)
+        engine.run_tests(self, delta=0.07)
 
     def test_split_to_piece(self):
         engine = QuantumTestEngine()
@@ -224,9 +224,9 @@ class TestJumpMove(unittest.TestCase):
             board.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
 
         def action(board):
-            board.collapse_by_flag(0xfffff)
+            board.collapse_by_flag(None, collapse_all=True)
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
         engine.run_engine(500)
-        engine.run_tests(self, delta=0.05)
+        engine.run_tests(self, delta=0.07)

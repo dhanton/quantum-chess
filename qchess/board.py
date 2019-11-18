@@ -1,3 +1,5 @@
+import itertools
+
 from qiskit import *
 
 from . import qutils
@@ -15,13 +17,19 @@ class Board:
         #board main quantum register
         self.qregister = QuantumRegister(width * height)
         
-        #ancilla qubits used for intermediate operations
-        self.aregister = QuantumRegister(4)
+        #ancilla qubits used for some intermediate operations
+        self.aregister = QuantumRegister(3)
+
+        #ancilla qubits used by the mct function in qutils
+        self.mct_register = QuantumRegister(6)
         
-        #classical bit to collapse each square individually
+        #classical bits to collapse each square individually
         self.cregister = ClassicalRegister(width * height)
 
-        self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.cregister)
+        #classical bit for other operations
+        self.cbit_misc = ClassicalRegister(1)
+
+        self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.mct_register, self.cregister, self.cbit_misc)
 
     def in_bounds(self, x, y):
         if x < 0 or x >= self.width:
@@ -38,10 +46,10 @@ class Board:
         return False
 
     def get_array_index(self, x, y):
-        return self.height * y + x
+        return self.width * y + x
 
     def get_board_point(self, index):
-        return Point(index%self.width, int(index/self.height))
+        return Point(index%self.width, int(index/self.width))
 
     def get_qubit(self, x, y):
         return self.qregister[self.get_array_index(x, y)]
@@ -70,6 +78,54 @@ class Board:
         q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
 
+    def is_piece_collapsed(self, i):
+        piece = self.get_piece(i)
+
+        if piece == NullPiece:
+            return False
+
+        for j in range(self.width * self.height):
+            if i == j: continue
+
+            p = self.get_piece(j)
+            
+            if  p.qflag & piece.qflag != 0:
+                return False
+
+        return True
+
+    def get_path_points(self, source, target):
+        #not including source or target
+        path = []
+        
+        if not self.in_bounds(source.x, source.y): return path 
+        if not self.in_bounds(target.x, target.y): return path
+        if source == target: return path
+
+        vec = target - source
+        if vec.x != 0 and vec.y != 0 and vec.x != vec.y: return path
+
+        x_iter = y_iter = 0
+
+        if vec.x != 0:
+            x_iter = vec.x/abs(vec.x)
+        if vec.y != 0:
+            y_iter = vec.y/abs(vec.y)
+
+        for i in range(1, max(abs(vec.x), abs(vec.y))):
+            path.append(source + Point(x_iter * i, y_iter * i))
+
+        return path
+
+    def get_path_pieces(self, source, target):
+        pieces = []
+
+        for point in self.get_path_points(source, target):
+            if self.classical_board[point.x][point.y] != NullPiece:
+                pieces.append(self.classical_board[point.x][point.y])
+        
+        return pieces
+
     def entangle_flags(self, qflag1, qflag2):
         #nullpiece
         if not qflag1 or not qflag2:
@@ -88,25 +144,109 @@ class Board:
             elif piece.qflag & qflag2 != 0:
                 piece.qflag |= qflag1
 
-    def collapse_by_flag(self, qflag):
+    def entangle_path_flags(self, qflag, source, target):
+        pieces = self.get_path_pieces(source, target)
+
+        for piece in pieces:
+            self.entangle_flags(piece.qflag, qflag)
+
+        return bool(pieces)
+
+    def collapse_by_flag(self, qflag, collapse_all=False):
+        #nullpiece
+        if not qflag and not collapse_all:
+            return
+
         collapsed_indices = []
 
         for i in range(self.width * self.height):
             piece = self.get_piece(i)
 
-            if piece != NullPiece and piece.qflag & qflag != 0:
+            if (
+                not self.is_piece_collapsed(i) and
+                piece != NullPiece and (collapse_all or piece.qflag & qflag != 0)
+            ):
                 #measure the ith qubit to the ith bit
-                self.qcircuit.measure(i, i)
+                self.qcircuit.measure(self.qregister[i], self.cregister[i])
                 collapsed_indices.append(i)
         
+        if not collapsed_indices:
+            return
+
         result = execute(self.qcircuit, backend=qutils.backend, shots=1).result()
-        bitstring = list(result.get_counts().keys())[0]
+        bitstring = list(result.get_counts().keys())[0].split(' ')[1]
 
         for i, char in enumerate(bitstring[::-1]):
             if char == '0' and i in collapsed_indices:
                 pos = self.get_board_point(i)
                 self.classical_board[pos.x][pos.y] = NullPiece
 
+    def collapse_path(self, source, target):
+        for piece in self.get_path_pieces(source, target):
+            self.collapse_by_flag(piece.qflag)
+
+        #return true if path is clear after collapse
+        return not bool(self.get_path_pieces(source, target))
+
+    """
+        This function will atempt (with only access to classical info)
+        to tell if a slide move could violate the double occupancy
+        rule.
+
+        This function is called after qutils.perform_slide_capture
+        only if true was returned. So the path is clear in at least
+        one of the superpositions.
+    """
+    def does_slide_violate_double_occupancy(self, source, target):
+        target_piece = self.classical_board[target.x][target.y]
+
+        if target_piece == NullPiece: 
+            #target is always empty
+            return False
+
+        entangled_points = []
+        path = self.get_path_points(source, target)
+
+        for i in range(self.width * self.height):
+            point = self.get_board_point(i)
+
+            if self.classical_board[point.x][point.y].qflag & target_piece.qflag != 0:
+                entangled_points.append(point)
+
+        #if a piece is blocking the path independently of the entanglement
+        #of target, then DO is always violated
+        for i, point in enumerate(path):
+            if not point in entangled_points and self.get_piece(i) != NullPiece:
+                return True
+
+        #the number of pieces is the number of 1s in the target qflag
+        number_of_pieces = list(bin(target_piece.qflag)).count('1')
+
+        assert(len(entangled_points) >= number_of_pieces)
+
+        #contains 1 for each piece and the rest are zeroes (empty squares)
+        permutations = [1] * number_of_pieces + [0] * (len(entangled_points) - number_of_pieces)
+
+        #unique permutations of number of pieces in all points
+        permutations = set(list(itertools.permutations(permutations)))
+
+        for perm in permutations:
+            blocked = False
+            target_empty = True
+
+            #entangled_points and all permutations have the same length
+            #so they correspond to the same point for the same index
+            for i, point in enumerate(entangled_points):
+                if point in path and perm[i] == 1:
+                    blocked = True
+
+                if point == target and perm[i] == 1:
+                    target_empty = False
+
+            if blocked and not target_empty:
+                return True
+
+        return False
 
     def ascii_render(self):
         s = ""
@@ -154,15 +294,19 @@ class Board:
 
         target_piece = self.classical_board[target.x][target.y]
 
-        """
-        TODO: Handle slides and pawns properly
-              For slides:
-                    * If anything is blocking the path, then dont remove source clasically
-                    * If nothing is blocking the path, remove source clasically
-        """
-
         if target_piece == NullPiece or target_piece == piece:
-            qutils.perform_standard_jump(self, source, target)
+            if piece.is_move_slide():
+                if (
+                    self.entangle_path_flags(piece.qflag, source, target) and 
+                    target_piece == NullPiece
+                ):
+                    #if something may be blocking then the piece might stay in place
+                    #so we don't want to remove it clasically
+                    target_piece = piece
+                
+                qutils.perform_standard_slide(self, source, target)
+            else:
+                qutils.perform_standard_jump(self, source, target)
 
             self.classical_board[source.x][source.y] = target_piece
             self.classical_board[target.x][target.y] = piece
@@ -170,19 +314,56 @@ class Board:
             if target_piece.color == piece.color:
                 self.collapse_by_flag(target_piece.qflag)
 
-                if self.classical_board[target.x][target.y] == NullPiece:
-                    qutils.perform_standard_jump(self, source, target)
+                if (
+                    self.classical_board[source.x][source.y] != NullPiece and
+                    self.classical_board[target.x][target.y] == NullPiece
+                ):
+                    new_source_piece = NullPiece
 
-                    self.classical_board[source.x][source.y] = NullPiece
+                    if piece.is_move_slide():
+                        if self.entangle_path_flags(piece.qflag, source, target):
+                            #if something may be blocking then the piece might stay in place
+                            #so we don't want to remove it clasically
+                            new_source_piece = piece
+                        
+                        qutils.perform_standard_slide(self, source, target)
+                    else:
+                        qutils.perform_standard_jump(self, source, target)
+
+                    self.classical_board[source.x][source.y] = new_source_piece
                     self.classical_board[target.x][target.y] = piece
             else:
                 self.collapse_by_flag(piece.qflag)
 
                 if self.classical_board[source.x][source.y] != NullPiece:
-                    qutils.perform_capture_jump(self, source, target)
+                    if piece.is_move_slide():
+                        """
+                            Afer qutils.perform_capture_slide the path is collapsed
+                            already unless does_slide_violate_double_occupancy returns 0,
+                            in which case entanglement occurs.
+                            We call collapse_path to update the classical board.
+                        """
+                        if qutils.perform_capture_slide(self, source, target):
+                            if self.does_slide_violate_double_occupancy(source, target):
+                                if self.collapse_path(source, target):
+                                    self.classical_board[source.x][source.y] = NullPiece
+                                    self.classical_board[target.x][target.y] = piece
+                            else:
+                                if self.entangle_path_flags(piece.qflag, source, target):
+                                    new_source_piece = piece
+                                else:
+                                    self.classical_board[source.x][source.y] = NullPiece
+                                    
+                                self.classical_board[target.x][target.y] = piece
+                        else:
+                            if self.collapse_path(source, target):
+                                self.classical_board[source.x][source.y] = NullPiece
+                                self.classical_board[target.x][target.y] = piece
+                    else:
+                        qutils.perform_capture_jump(self, source, target)
 
-                    self.classical_board[source.x][source.y] = NullPiece
-                    self.classical_board[target.x][target.y] = piece
+                        self.classical_board[source.x][source.y] = NullPiece
+                        self.classical_board[target.x][target.y] = piece
 
         return True
 
@@ -222,11 +403,16 @@ class Board:
 
         qutils.perform_split_jump(self, source, target1, target2)
 
-        #we only entangle flags between the qubits to which we apply iswap_sqrt
+        #we should only entangle flags between the qubits to which we apply iswap_sqrt
+        #TODO: find best way to do this
         self.entangle_flags(piece.qflag, target_piece1.qflag)
+        self.entangle_flags(piece.qflag, target_piece2.qflag)
 
-        self.classical_board[target1.x][target1.y] = piece
-        self.classical_board[target2.x][target2.y] = piece
+        if target_piece1 == NullPiece:
+            self.classical_board[target1.x][target1.y] = piece
+
+        if target_piece2 == NullPiece:
+            self.classical_board[target2.x][target2.y] = piece
 
         if target_piece1 == NullPiece and target_piece2 == NullPiece:
             self.classical_board[source.x][source.y] = NullPiece
@@ -269,8 +455,10 @@ class Board:
 
         qutils.perform_merge_jump(self, source1, source2, target)
 
-        #we only entangle flags between the qubits to which we apply iswap_sqrt
+        #we should only entangle flags between the qubits to which we apply iswap_sqrt
+        #TODO: find best way to do this        
         self.entangle_flags(piece1.qflag, piece2.qflag)
+        self.entangle_flags(piece1.qflag, target_piece.qflag)
 
         self.classical_board[target.x][target.y] = piece1
 

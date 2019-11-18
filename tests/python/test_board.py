@@ -63,6 +63,30 @@ class TestPiece(unittest.TestCase):
             [0, 1, 0, 1, 0],
         ]
 
+        moves[PieceType.ROOK] = [
+            [0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0],
+            [1, 1, 0, 1, 1],
+            [0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0],
+        ]
+
+        moves[PieceType.BISHOP] = [
+            [1, 0, 0, 0, 1],
+            [0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0],
+            [1, 0, 0, 0, 1],
+        ]
+
+        moves[PieceType.QUEEN] = [
+            [1, 0, 1, 0, 1],
+            [0, 1, 1, 1, 0],
+            [1, 1, 0, 1, 1],
+            [0, 1, 1, 1, 0],
+            [1, 0, 1, 0, 1],
+        ]
+
         for x in range(25):
             i = x%5
             j = int(x/5)
@@ -126,8 +150,8 @@ class TestBoard(unittest.TestCase):
         self.assertFalse(board.is_occupied(1, 1))
 
     def test_get_array_index(self):
-        #there are 9 qubits, indexed 0...8
-        board = Board(3, 3)
+        #there are 12 qubits, indexed 0...11
+        board = Board(3, 4)
 
         self.assertEqual(board.get_array_index(0, 0), 0)
         self.assertEqual(board.get_array_index(1, 0), 1)
@@ -138,9 +162,12 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board.get_array_index(0, 2), 6)
         self.assertEqual(board.get_array_index(1, 2), 7)
         self.assertEqual(board.get_array_index(2, 2), 8)
+        self.assertEqual(board.get_array_index(0, 3), 9)
+        self.assertEqual(board.get_array_index(1, 3), 10)
+        self.assertEqual(board.get_array_index(2, 3), 11)
         
     def test_get_board_point(self):
-        board = Board(3, 3)
+        board = Board(3, 4)
 
         self.assertEqual(board.get_board_point(0), Point(0, 0))
         self.assertEqual(board.get_board_point(1), Point(1, 0))
@@ -150,7 +177,9 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board.get_board_point(5), Point(2, 1))
         self.assertEqual(board.get_board_point(6), Point(0, 2))
         self.assertEqual(board.get_board_point(7), Point(1, 2))
-        self.assertEqual(board.get_board_point(8), Point(2, 2))
+        self.assertEqual(board.get_board_point(9), Point(0, 3))
+        self.assertEqual(board.get_board_point(10), Point(1, 3))
+        self.assertEqual(board.get_board_point(11), Point(2, 3))
 
     def test_simplified_matrix(self):
         board = Board(3, 3)
@@ -167,5 +196,18 @@ class TestBoard(unittest.TestCase):
         
         self.assertEqual(board.get_simplified_matrix(), result)
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_path_points(self):
+        diagonal = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        diagonal_inv = [Point(3, 3), Point(2, 2), Point(1, 1)]
+        row = [Point(1, 0), Point(2, 0), Point(3, 0)]
+        row_inv = [Point(3, 0), Point(2, 0), Point(1, 0)]
+        col = [Point(0, 1), Point(0, 2), Point(0, 3)]
+        col_inv = [Point(0, 3), Point(0, 2), Point(0, 1)]
+
+        board = Board(5, 5)
+        self.assertEqual(board.get_path_points(Point(0, 0), Point(4, 4)), diagonal)
+        self.assertEqual(board.get_path_points(Point(0, 0), Point(0, 4)), col)
+        self.assertEqual(board.get_path_points(Point(0, 0), Point(4, 0)), row)
+        self.assertEqual(board.get_path_points(Point(4, 4), Point(0, 0)), diagonal_inv)
+        self.assertEqual(board.get_path_points(Point(0, 4), Point(0, 0)), col_inv)
+        self.assertEqual(board.get_path_points(Point(4, 0), Point(0, 0)), row_inv)

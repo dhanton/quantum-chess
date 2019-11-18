@@ -22,6 +22,17 @@ iSwap_sqrt = Operator([
     [0, 0, 0, 1],
 ])
 
+iSlide = Operator([
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1j, 0, 0, 0, 0, 0],
+    [0, 1j, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+])
+
 def perform_standard_jump(board, source, target):
     qsource = board.get_qubit(source.x, source.y)
     qtarget = board.get_qubit(target.x, target.y)
@@ -54,3 +65,84 @@ def perform_merge_jump(board, source1, source2, target):
 
     board.qcircuit.unitary(iSwap, [qtarget, qsource2], label='iSwap')
     board.qcircuit.unitary(iSwap_sqrt, [qsource1, qtarget], label='iSwap_sqrt')
+
+def perform_standard_slide(board, source, target):
+    control_qubits = []
+
+    for point in board.get_path_points(source, target):
+        control_qubits.append(board.get_qubit(point.x, point.y))
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+    qsource = board.get_qubit(source.x, source.y)
+    qtarget = board.get_qubit(target.x, target.y)
+    
+    path_ancilla = board.aregister[0]
+    board.qcircuit.reset(path_ancilla)
+    board.qcircuit.x(path_ancilla)
+
+    board.qcircuit.mct(control_qubits, path_ancilla, board.mct_register, mode='advanced')
+    board.qcircuit.unitary(iSlide, [qsource, qtarget, path_ancilla])
+
+    for point in board.get_path_points(source, target):
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+"""
+    *The source piece has already been collapsed before this is called*
+
+    So the basic idea behind this circuit is that if:
+        -The path is clear (doesn't matter if target is empty or not)
+                        OR
+        -The path is not clear but the target is empty
+
+    Then there's no double occupancy and the piece can capture.
+"""
+def perform_capture_slide(board, source, target):
+    control_qubits = []
+
+    for point in board.get_path_points(source, target):
+        control_qubits.append(board.get_qubit(point.x, point.y))
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+    qsource = board.get_qubit(source.x, source.y)
+    qtarget = board.get_qubit(target.x, target.y)
+
+    #holds if the path is clear or not
+    path_ancilla = board.aregister[0]
+    board.qcircuit.reset(path_ancilla)
+    board.qcircuit.x(path_ancilla)
+
+    board.qcircuit.mct(control_qubits, path_ancilla, board.mct_register, mode='advanced')
+
+    #holds the final condition that's going to be measured
+    cond_ancilla = board.aregister[1]
+    board.qcircuit.reset(cond_ancilla)
+
+    #holds the captured piece
+    captured_piece = board.aregister[2]
+    board.qcircuit.reset(captured_piece)
+
+    #path is not blocked
+    board.qcircuit.x(path_ancilla)
+    board.qcircuit.cx(path_ancilla, cond_ancilla)
+    board.qcircuit.x(path_ancilla)
+
+    #blocked but target empty
+    board.qcircuit.x(qtarget)
+    board.qcircuit.ccx(qtarget, path_ancilla, cond_ancilla)
+    board.qcircuit.x(qtarget)
+
+    board.qcircuit.measure(cond_ancilla, board.cbit_misc[0])
+
+    board.qcircuit.unitary(iSlide, [qtarget, captured_piece, path_ancilla]).c_if(board.cbit_misc, 1)
+    board.qcircuit.unitary(iSlide, [qsource, qtarget, path_ancilla]).c_if(board.cbit_misc, 1)
+
+    for point in board.get_path_points(source, target):
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+    result = execute(board.qcircuit, backend=backend, shots=1).result()
+
+    #since get_counts() gives '1 00000001'
+    #a bit hacky but I don't know any other way to get this result
+    cbit_value = int(list(result.get_counts().keys())[0].split(' ')[0])
+
+    return (cbit_value == 1)
