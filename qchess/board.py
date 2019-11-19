@@ -78,7 +78,8 @@ class Board:
         q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
 
-    def is_piece_collapsed(self, i):
+    #deprecated
+    def _is_piece_collapsed(self, i):
         piece = self.get_piece(i)
 
         if piece == NullPiece:
@@ -145,10 +146,14 @@ class Board:
                 piece.qflag |= qflag1
 
     def entangle_path_flags(self, qflag, source, target):
+        all_qflags = 0
+
         pieces = self.get_path_pieces(source, target)
 
         for piece in pieces:
-            self.entangle_flags(piece.qflag, qflag)
+            all_qflags |= piece.qflag
+        
+        self.entangle_flags(all_qflags, qflag)
 
         return bool(pieces)
 
@@ -163,7 +168,7 @@ class Board:
             piece = self.get_piece(i)
 
             if (
-                not self.is_piece_collapsed(i) and
+                # not self.is_piece_collapsed(i) and
                 piece != NullPiece and (collapse_all or piece.qflag & qflag != 0)
             ):
                 #measure the ith qubit to the ith bit
@@ -181,9 +186,29 @@ class Board:
                 pos = self.get_board_point(i)
                 self.classical_board[pos.x][pos.y] = NullPiece
 
-    def collapse_path(self, source, target):
+                #set to |0> in circuit
+                self.qcircuit.reset(self.qregister[i])
+
+            if char == '1' and i in collapsed_indices:
+                #set to |1> in circuit
+                self.qcircuit.reset(self.qregister[i])
+                self.qcircuit.x(self.qregister[i])
+
+    def collapse_path(self, source, target, collapse_target=False, collapse_source=False):
+        qflag = 0
+
         for piece in self.get_path_pieces(source, target):
-            self.collapse_by_flag(piece.qflag)
+            qflag |= piece.qflag
+
+        source_piece = self.classical_board[source.x][source.y]
+        if source_piece != NullPiece and collapse_source:
+            qflag |= source_piece.qflag
+
+        target_piece = self.classical_board[target.x][target.y]
+        if target_piece != NullPiece and collapse_source:
+            qflag |= target_piece.qflag
+
+        self.collapse_by_flag(qflag)
 
         #return true if path is clear after collapse
         return not bool(self.get_path_pieces(source, target))
@@ -195,7 +220,8 @@ class Board:
 
         This function is called after qutils.perform_slide_capture
         only if true was returned. So the path is clear in at least
-        one of the superpositions.
+        one of the superpositions, or the path is blocked but target
+        is empty.
     """
     def does_slide_violate_double_occupancy(self, source, target):
         target_piece = self.classical_board[target.x][target.y]
@@ -345,19 +371,19 @@ class Board:
                         """
                         if qutils.perform_capture_slide(self, source, target):
                             if self.does_slide_violate_double_occupancy(source, target):
-                                if self.collapse_path(source, target):
-                                    self.classical_board[source.x][source.y] = NullPiece
+                                path_clear =  self.collapse_path(source, target, collapse_source=True)
+
+                                if path_clear and self.classical_board[source.x][source.y] == NullPiece:
                                     self.classical_board[target.x][target.y] = piece
                             else:
-                                if self.entangle_path_flags(piece.qflag, source, target):
-                                    new_source_piece = piece
-                                else:
+                                if not self.entangle_path_flags(piece.qflag, source, target):
                                     self.classical_board[source.x][source.y] = NullPiece
                                     
                                 self.classical_board[target.x][target.y] = piece
                         else:
-                            if self.collapse_path(source, target):
-                                self.classical_board[source.x][source.y] = NullPiece
+                            path_clear = self.collapse_path(source, target, collapse_source=True)
+
+                            if path_clear and self.classical_board[source.x][source.y] == NullPiece:
                                 self.classical_board[target.x][target.y] = piece
                     else:
                         qutils.perform_capture_jump(self, source, target)

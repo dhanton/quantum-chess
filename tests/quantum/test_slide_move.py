@@ -201,6 +201,33 @@ class TestSlideMove(unittest.TestCase):
         engine.run_engine(500)
         engine.run_tests(self, delta=0.07)
 
+    def test_bell_state_entangle(self):
+        engine = QuantumTestEngine()
+        engine.add_board_state(
+            [
+                ['N', '0', '0'],
+                ['0', '0', '0'],
+                ['0', 'K', 'b'],
+            ],
+            1
+        )
+
+        def board_factory(board):
+            board.add_piece(1, 0, Piece(PieceType.KING, Color.WHITE))
+            board.add_piece(1, 2, Piece(PieceType.KNIGHT, Color.WHITE))
+            board.add_piece(2, 2, Piece(PieceType.BISHOP, Color.BLACK))
+            
+        def action(board):
+            board.split_move(Point(1, 0), Point(1, 1), Point(0, 0))
+            board.standard_move(Point(2, 2), Point(0, 0))
+            board.standard_move(Point(1, 2), Point(0, 0))
+            board.standard_move(Point(1, 1), Point(1, 2))
+            
+        engine.set_board_factory(3, 3, board_factory)
+        engine.set_action(action)
+        engine.run_engine(500)
+        engine.run_tests(self, delta=0.07)
+
     def test_bell_state(self):
         engine = QuantumTestEngine()
         engine.add_board_state(
