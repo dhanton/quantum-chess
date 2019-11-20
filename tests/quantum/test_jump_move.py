@@ -148,7 +148,7 @@ class TestJumpMove(unittest.TestCase):
 
         def action(board):
             board.standard_move(Point(0, 2), Point(1, 1))
-            board.collapse_by_flag(1)
+            board.collapse_by_flag(None, collapse_all=True)
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)

@@ -3,7 +3,7 @@ import unittest
 from qchess.board import *
 from .quantum_test_engine import QuantumTestEngine
 
-class TestSlideMove(unittest.TestCase):
+class TestSlideStandardMove(unittest.TestCase):
     def test_nonclear_path_capture(self):
         engine = QuantumTestEngine()
         engine.add_board_state(

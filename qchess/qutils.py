@@ -17,6 +17,7 @@ iSwap = Operator([
     [0, 0, 0, 1],
 ])
 
+#in base s, t, control
 iSwap_controlled = Operator([
     [1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1j, 0, 0, 0, 0, 0],
@@ -59,18 +60,6 @@ iSlide = Operator([
     [0, 0, 0, 0, 0, 0, 1, 0],
     [0, 0, 0, 0, 0, 0, 0, 1],
 ])
-
-#in base s, t, control
-iSplit = [
-    [1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1j, 0, 0, 0, 0, 0],
-    [0, 1j/b, 0, 0, 1j/b, 0, 0, 0],
-    [0, 0, 0, 1/b, 0, 0, -1/b, 0],
-    [0, -1/b, 0, 0, 1/b, 0, 0, 0],
-    [0, 0, 0, 1j/b, 0, 0, 1j/b, 0],
-    [0, 0, 0, 0, 0, 1j, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1],
-]
 
 def perform_standard_jump(board, source, target):
     qsource = board.get_qubit(source.x, source.y)
@@ -186,14 +175,22 @@ def perform_capture_slide(board, source, target):
 
     return (cbit_value == 1)
 
-def perform_split_slide(board, source, target1, target2):
-    qsource = board.get_qubit(source.x, source.y)
-    qtarget1 = board.get_qubit(target1.x, target1.y)
-    qtarget2 = board.get_qubit(target2.x, target2.y)
+"""
+    Since the differences between both operations are only two gates,
+    it's useful to implement them together.
+
+    The args (single, double1, double2) are
+        split: (source, target1, target2)
+        merge: (target, source1, source2)
+"""
+def _slide_split_merge(board, single, double1, double2, is_split):
+    qsingle = board.get_qubit(single.x, single.y)
+    qdouble1 = board.get_qubit(double1.x, double1.y)
+    qdouble2 = board.get_qubit(double2.x, double2.y)
 
     #get all qubits in first path
     control_qubits1 = []
-    for point in board.get_path_points(source, target1):
+    for point in board.get_path_points(single, double1):
         control_qubits1.append(board.get_qubit(point.x, point.y))
         board.qcircuit.x(board.get_qubit(point.x, point.y))
 
@@ -211,7 +208,7 @@ def perform_split_slide(board, source, target1, target2):
 
     #get all qubits in second path
     control_qubits2 = []
-    for point in board.get_path_points(source, target2):
+    for point in board.get_path_points(single, double2):
         control_qubits2.append(board.get_qubit(point.x, point.y))
         board.qcircuit.x(board.get_qubit(point.x, point.y))
 
@@ -231,12 +228,18 @@ def perform_split_slide(board, source, target1, target2):
     board.qcircuit.reset(control_ancilla)
     board.qcircuit.x(control_ancilla)
 
-    #perform the split
+    #perform the split/merge
     board.qcircuit.x(path_ancilla1)
     board.qcircuit.x(path_ancilla2)
     board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
-    board.qcircuit.unitary(iSwap_sqrt_controlled, [qtarget1, qsource, control_ancilla])
-    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget2, control_ancilla])
+
+    if is_split:
+        board.qcircuit.unitary(iSwap_sqrt_controlled, [qdouble1, qsingle, control_ancilla])
+        board.qcircuit.unitary(iSwap_controlled, [qsingle, qdouble2, control_ancilla])
+    else:
+        board.qcircuit.unitary(iSwap_controlled, [qsingle, qdouble2, control_ancilla])
+        board.qcircuit.unitary(iSwap_sqrt_controlled, [qdouble1, qsingle, control_ancilla])
+
     board.qcircuit.x(path_ancilla1)
     board.qcircuit.x(path_ancilla2)
 
@@ -247,7 +250,7 @@ def perform_split_slide(board, source, target1, target2):
     #perform one jump
     board.qcircuit.x(path_ancilla1)
     board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
-    board.qcircuit.unitary(iSlide, [qtarget1, qsource, control_ancilla])
+    board.qcircuit.unitary(iSlide, [qdouble1, qsingle, control_ancilla])
     board.qcircuit.x(path_ancilla1)
 
     #reset the control
@@ -257,5 +260,11 @@ def perform_split_slide(board, source, target1, target2):
     #perform the other jump
     board.qcircuit.x(path_ancilla2)
     board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
-    board.qcircuit.unitary(iSlide, [qsource, qtarget2, control_ancilla])
+    board.qcircuit.unitary(iSlide, [qsingle, qdouble2, control_ancilla])
     board.qcircuit.x(path_ancilla2)
+
+def perform_split_slide(board, source, target1, target2):
+    _slide_split_merge(board, source, target1, target2, is_split=True)
+
+def perform_merge_slide(board, source1, source2, target):
+    _slide_split_merge(board, target, source1, source2, is_split=False)    

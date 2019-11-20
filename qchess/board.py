@@ -429,7 +429,20 @@ class Board:
             print("Invalid move - Target square is not empty")
             return False
 
-        qutils.perform_split_jump(self, source, target1, target2)
+        new_source_piece = NullPiece
+
+        if piece.is_move_slide():
+            qutils.perform_split_slide(self, source, target1, target2)
+
+            path1_blocked = self.entangle_path_flags(piece.qflag, source, target1)
+            path2_blocked = self.entangle_path_flags(piece.qflag, source, target2)
+            
+            #set the source piece to null if any of the paths is not blocked,
+            #since the piece will always slide through that one if the other is blocked
+            if path1_blocked and path2_blocked:
+                new_source_piece = piece
+        else:
+            qutils.perform_split_jump(self, source, target1, target2)
 
         #we should only entangle flags between the qubits to which we apply iswap_sqrt
         #TODO: find best way to do this
@@ -443,7 +456,7 @@ class Board:
             self.classical_board[target2.x][target2.y] = piece
 
         if target_piece1 == NullPiece and target_piece2 == NullPiece:
-            self.classical_board[source.x][source.y] = NullPiece
+            self.classical_board[source.x][source.y] = new_source_piece
 
         return True
     
@@ -481,7 +494,22 @@ class Board:
             print('Invalid move - Target square is not empty')
             return False
 
-        qutils.perform_merge_jump(self, source1, source2, target)
+        new_source1_piece = NullPiece
+        new_source2_piece = NullPiece
+
+        if piece1.is_move_slide:
+            qutils.perform_merge_slide(self, source1, source2, target)
+
+            #set source piece to null only if the path for that piece is not blocked,
+            #since if it's blocked then the piece might not be able to slide through
+            if self.entangle_path_flags(piece1.qflag, source1, target):
+                new_source1_piece = piece1
+
+            if self.entangle_path_flags(piece2.qflag, source2, target):
+                new_source2_piece = piece2
+
+        else:
+            qutils.perform_merge_jump(self, source1, source2, target)
 
         #we should only entangle flags between the qubits to which we apply iswap_sqrt
         #TODO: find best way to do this        
@@ -491,7 +519,7 @@ class Board:
         self.classical_board[target.x][target.y] = piece1
 
         if target_piece == NullPiece:
-            self.classical_board[source1.x][source1.y] = NullPiece
-            self.classical_board[source2.x][source2.y] = NullPiece
+            self.classical_board[source1.x][source1.y] = new_source1_piece
+            self.classical_board[source2.x][source2.y] = new_source2_piece
 
         return True
