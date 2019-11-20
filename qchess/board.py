@@ -178,7 +178,9 @@ class Board:
         if not collapsed_indices:
             return
 
-        result = execute(self.qcircuit, backend=qutils.backend, shots=1).result()
+        job = execute(self.qcircuit, backend=qutils.backend, shots=1)
+        result = job.result()
+
         bitstring = list(result.get_counts().keys())[0].split(' ')[1]
 
         for i, char in enumerate(bitstring[::-1]):

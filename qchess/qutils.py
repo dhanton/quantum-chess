@@ -1,4 +1,4 @@
-import numpy as np
+import math
 
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.quantum_info.operators import Operator
@@ -8,6 +8,8 @@ from qiskit.tools.visualization import plot_histogram
 
 backend = Aer.get_backend('qasm_simulator')
 
+b = math.sqrt(2)
+
 iSwap = Operator([
     [1, 0, 0, 0],
     [0, 0, 1j, 0],
@@ -15,11 +17,36 @@ iSwap = Operator([
     [0, 0, 0, 1],
 ])
 
+iSwap_controlled = Operator([
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1j, 0, 0, 0, 0, 0],
+    [0, 1j, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+
+])
+
 iSwap_sqrt = Operator([
     [1, 0, 0, 0],
-    [0, 1/np.sqrt(2), 1j/np.sqrt(2), 0],
-    [0, 1j/np.sqrt(2), 1/np.sqrt(2), 0],
+    [0, 1/b, 1j/b, 0],
+    [0, 1j/b, 1/b, 0],
     [0, 0, 0, 1],
+])
+
+#in base s, t, control
+iSwap_sqrt_controlled = Operator([
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1/b, 1j/b, 0, 0, 0, 0, 0],
+    [0, 1j/b, 1/b, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+
 ])
 
 iSlide = Operator([
@@ -32,6 +59,18 @@ iSlide = Operator([
     [0, 0, 0, 0, 0, 0, 1, 0],
     [0, 0, 0, 0, 0, 0, 0, 1],
 ])
+
+#in base s, t, control
+iSplit = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1j, 0, 0, 0, 0, 0],
+    [0, 1j/b, 0, 0, 1j/b, 0, 0, 0],
+    [0, 0, 0, 1/b, 0, 0, -1/b, 0],
+    [0, -1/b, 0, 0, 1/b, 0, 0, 0],
+    [0, 0, 0, 1j/b, 0, 0, 1j/b, 0],
+    [0, 0, 0, 0, 0, 1j, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+]
 
 def perform_standard_jump(board, source, target):
     qsource = board.get_qubit(source.x, source.y)
@@ -146,3 +185,77 @@ def perform_capture_slide(board, source, target):
     cbit_value = int(list(result.get_counts().keys())[0].split(' ')[0])
 
     return (cbit_value == 1)
+
+def perform_split_slide(board, source, target1, target2):
+    qsource = board.get_qubit(source.x, source.y)
+    qtarget1 = board.get_qubit(target1.x, target1.y)
+    qtarget2 = board.get_qubit(target2.x, target2.y)
+
+    #get all qubits in first path
+    control_qubits1 = []
+    for point in board.get_path_points(source, target1):
+        control_qubits1.append(board.get_qubit(point.x, point.y))
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+    #holds if the first path is clear or not
+    path_ancilla1 = board.aregister[0]
+    board.qcircuit.reset(path_ancilla1)
+    board.qcircuit.x(path_ancilla1)
+
+    #perform their combined CNOT 
+    board.qcircuit.mct(control_qubits1, path_ancilla1, board.mct_register, mode='advanced')
+
+    #undo the X
+    for qubit in control_qubits1:
+        board.qcircuit.x(qubit)
+
+    #get all qubits in second path
+    control_qubits2 = []
+    for point in board.get_path_points(source, target2):
+        control_qubits2.append(board.get_qubit(point.x, point.y))
+        board.qcircuit.x(board.get_qubit(point.x, point.y))
+
+    #holds if the second path is clear or not
+    path_ancilla2 = board.aregister[1]
+    board.qcircuit.reset(path_ancilla2)
+    board.qcircuit.x(path_ancilla2)
+
+    #perform their combined CNOT
+    board.qcircuit.mct(control_qubits2, path_ancilla2, board.mct_register, mode='advanced')
+
+    for qubit in control_qubits2:
+        board.qcircuit.x(qubit)
+
+    #holds the control for jump and slide
+    control_ancilla = board.aregister[2]
+    board.qcircuit.reset(control_ancilla)
+    board.qcircuit.x(control_ancilla)
+
+    #perform the split
+    board.qcircuit.x(path_ancilla1)
+    board.qcircuit.x(path_ancilla2)
+    board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
+    board.qcircuit.unitary(iSwap_sqrt_controlled, [qtarget1, qsource, control_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget2, control_ancilla])
+    board.qcircuit.x(path_ancilla1)
+    board.qcircuit.x(path_ancilla2)
+
+    #reset the control
+    board.qcircuit.reset(control_ancilla)
+    board.qcircuit.x(control_ancilla)
+
+    #perform one jump
+    board.qcircuit.x(path_ancilla1)
+    board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
+    board.qcircuit.unitary(iSlide, [qtarget1, qsource, control_ancilla])
+    board.qcircuit.x(path_ancilla1)
+
+    #reset the control
+    board.qcircuit.reset(control_ancilla)
+    board.qcircuit.x(control_ancilla)
+
+    #perform the other jump
+    board.qcircuit.x(path_ancilla2)
+    board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
+    board.qcircuit.unitary(iSlide, [qsource, qtarget2, control_ancilla])
+    board.qcircuit.x(path_ancilla2)
