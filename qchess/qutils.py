@@ -17,7 +17,8 @@ iSwap = Operator([
     [0, 0, 0, 1],
 ])
 
-#in base s, t, control
+#when the controlled qubit holds if a path is clear
+#then this gate can be understood as the slide gate
 iSwap_controlled = Operator([
     [1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1j, 0, 0, 0, 0, 0],
@@ -27,7 +28,6 @@ iSwap_controlled = Operator([
     [0, 0, 0, 0, 0, 1, 0, 0],
     [0, 0, 0, 0, 0, 0, 1, 0],
     [0, 0, 0, 0, 0, 0, 0, 1],
-
 ])
 
 iSwap_sqrt = Operator([
@@ -48,17 +48,6 @@ iSwap_sqrt_controlled = Operator([
     [0, 0, 0, 0, 0, 0, 1, 0],
     [0, 0, 0, 0, 0, 0, 0, 1],
 
-])
-
-iSlide = Operator([
-    [1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1j, 0, 0, 0, 0, 0],
-    [0, 1j, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1],
 ])
 
 def perform_standard_jump(board, source, target):
@@ -109,7 +98,7 @@ def perform_standard_slide(board, source, target):
     board.qcircuit.x(path_ancilla)
 
     board.qcircuit.mct(control_qubits, path_ancilla, board.mct_register, mode='advanced')
-    board.qcircuit.unitary(iSlide, [qsource, qtarget, path_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, path_ancilla])
 
     for point in board.get_path_points(source, target):
         board.qcircuit.x(board.get_qubit(point.x, point.y))
@@ -161,8 +150,8 @@ def perform_capture_slide(board, source, target):
 
     board.qcircuit.measure(cond_ancilla, board.cbit_misc[0])
 
-    board.qcircuit.unitary(iSlide, [qtarget, captured_piece, path_ancilla]).c_if(board.cbit_misc, 1)
-    board.qcircuit.unitary(iSlide, [qsource, qtarget, path_ancilla]).c_if(board.cbit_misc, 1)
+    board.qcircuit.unitary(iSwap_controlled, [qtarget, captured_piece, path_ancilla]).c_if(board.cbit_misc, 1)
+    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, path_ancilla]).c_if(board.cbit_misc, 1)
 
     for point in board.get_path_points(source, target):
         board.qcircuit.x(board.get_qubit(point.x, point.y))
@@ -250,7 +239,7 @@ def _slide_split_merge(board, single, double1, double2, is_split):
     #perform one jump
     board.qcircuit.x(path_ancilla1)
     board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
-    board.qcircuit.unitary(iSlide, [qdouble1, qsingle, control_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qdouble1, qsingle, control_ancilla])
     board.qcircuit.x(path_ancilla1)
 
     #reset the control
@@ -260,7 +249,7 @@ def _slide_split_merge(board, single, double1, double2, is_split):
     #perform the other jump
     board.qcircuit.x(path_ancilla2)
     board.qcircuit.ccx(path_ancilla1, path_ancilla2, control_ancilla)
-    board.qcircuit.unitary(iSlide, [qsingle, qdouble2, control_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qsingle, qdouble2, control_ancilla])
     board.qcircuit.x(path_ancilla2)
 
 def perform_split_slide(board, source, target1, target2):
@@ -268,3 +257,52 @@ def perform_split_slide(board, source, target1, target2):
 
 def perform_merge_slide(board, source1, source2, target):
     _slide_split_merge(board, target, source1, source2, is_split=False)    
+
+def perform_standard_en_passant(board, source, target, ep_target):
+    qsource = board.get_qubit(source.x, source.y)
+    qtarget = board.get_qubit(target.x, target.y)
+    qep_target = board.get_qubit(ep_target.x, ep_target.y)
+
+    captured_ancilla = board.aregister[0]
+    board.qcircuit.reset(captured_ancilla)
+
+    #holds if both source and ep_target are empty or not at the same time
+    both_pieces_ancilla = board.aregister[1]
+    board.qcircuit.reset(both_pieces_ancilla)
+    board.qcircuit.x(both_pieces_ancilla)
+
+    board.qcircuit.ccx(qsource, qep_target, both_pieces_ancilla)
+    board.qcircuit.x(both_pieces_ancilla)
+
+    board.qcircuit.unitary(iSwap_controlled, [qep_target, captured_ancilla, both_pieces_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, both_pieces_ancilla])
+
+def perform_standard_en_passant(board, source, target, ep_target):
+    qsource = board.get_qubit(source.x, source.y)
+    qtarget = board.get_qubit(target.x, target.y)
+    qep_target = board.get_qubit(ep_target.x, ep_target.y)
+
+    #since this move can capture two pieces at the same time,
+    #we need two ancillas to hold them
+    captured_ancilla1 = board.aregister[0]
+    board.qcircuit.reset(captured_ancilla1)
+
+    captured_ancilla2 = board.aregister[1]
+    board.qcircuit.reset(captured_ancilla2)
+
+    #holds if any of target, ep_target exist
+    #Note: It's impossible for them to exist at the same time (during this function's call),
+    #   since if they did that would mean that target piece has reached its position
+    #   after the pawn moved and thus EP would not be not a valid move.
+    any_piece_ancilla = board.aregister[2]
+    board.qcircuit.reset(any_piece_ancilla)
+    board.qcircuit.x(any_piece_ancilla)
+
+    board.qcircuit.cx(qep_target, any_piece_ancilla)
+    board.qcircuit.cx(qtarget, any_piece_ancilla)
+
+    board.qcircuit.x(any_piece_ancilla)
+
+    board.qcircuit.unitary(iSwap_controlled, [qep_target, captured_ancilla1, any_piece_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qtarget, captured_ancilla2, any_piece_ancilla])
+    board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, any_piece_ancilla])
