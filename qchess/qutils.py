@@ -277,7 +277,7 @@ def perform_standard_en_passant(board, source, target, ep_target):
     board.qcircuit.unitary(iSwap_controlled, [qep_target, captured_ancilla, both_pieces_ancilla])
     board.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, both_pieces_ancilla])
 
-def perform_standard_en_passant(board, source, target, ep_target):
+def perform_capture_en_passant(board, source, target, ep_target):
     qsource = board.get_qubit(source.x, source.y)
     qtarget = board.get_qubit(target.x, target.y)
     qep_target = board.get_qubit(ep_target.x, ep_target.y)
