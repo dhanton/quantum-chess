@@ -95,7 +95,92 @@ class TestPiece(unittest.TestCase):
             for t in PieceType:
                 if not t in moves: continue
                 msg = t.name + ' is_move_valid from ' + str(source) + ' to ' + str(target)
-                self.assertEqual(Piece(t, Color.WHITE).is_move_valid(source, target), moves[t][i][j], msg=msg)
+                self.assertEqual(Piece(t, Color.WHITE).is_move_valid(source, target), moves[t][j][i], msg=msg)
+
+    def test_is_pawn_move_valid(self):
+        # INVALID = 0,
+        # SINGLE_STEP = 1,
+        # DOUBLE_STEP = 2,
+        # CAPTURE = 3,
+        # EN_PASSANT = 4
+
+        clear = [
+            [0, 0, 2, 0, 0],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+
+        white = [
+            [0, 0, 2, 0, 0],
+            [0, 3, 1, 3, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+
+        black = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 3, 1, 3, 0],
+            [0, 0, 2, 0, 0],
+        ]
+
+        clear_already_moved = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+
+        en_passant = [
+            [0, 0, 2, 0, 0],
+            [0, 4, 1, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+
+        #different color pawns to check move direction works
+        source = Point(2, 2)
+        pawn1 = Pawn(Color.WHITE)
+        pawn2 = Pawn(Color.BLACK)
+        pawn3 = Pawn(Color.WHITE)
+        pawn3.has_moved = True
+
+        #clear board
+        board1 = Board(5, 5)
+        
+        #board with multiple pieces to capture
+        board2 = Board(5, 5)
+        board2.add_piece(1, 1, Piece(PieceType.KING, Color.BLACK))
+        board2.add_piece(3, 1, Piece(PieceType.KING, Color.BLACK))
+        board2.add_piece(1, 3, Piece(PieceType.KING, Color.WHITE))
+        board2.add_piece(3, 3, Piece(PieceType.KING, Color.WHITE))
+
+        #board where one black pawn performs a double step (to test EP)
+        board3 = Board(5, 5)
+        board3.add_piece(source.x, source.y, pawn1)
+        board3.add_piece(1, 0, Pawn(Color.BLACK))
+        board3.standard_move(Point(1, 0), Point(1, 2))
+
+        for x in range(25):
+            i = x%5
+            j = int(x/5)
+            target = Point(i, j)
+
+            #since the result is a tuple (move_type, EP_point) we need [0]
+            #EP_point being None for most moves
+            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board1)[0]), clear[j][i])
+            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board2)[0]), white[j][i])
+            self.assertEqual(int(pawn2.is_move_valid(source, target, board=board2)[0]), black[j][i])
+
+            self.assertEqual(int(pawn3.is_move_valid(source, target, board=board1)[0]), clear_already_moved[j][i])
+
+            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board3)[0]), en_passant[j][i])
 
 class TestBoard(unittest.TestCase):
     def test_classical_board(self):

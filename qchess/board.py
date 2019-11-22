@@ -5,6 +5,7 @@ from qiskit import *
 from . import qutils
 from .point import Point
 from .piece import *
+from .pawn import Pawn
 
 class Board:
     def __init__(self, width, height):
@@ -14,6 +15,11 @@ class Board:
 
         self.classical_board = [[NullPiece for y in range(height)] for x in range(width)]
         
+        #holds the position of the captureable en passant pawn
+        #none if the last move wasn't a pawn's double step
+        self.ep_pawn_point = None
+        self.just_moved_ep = False
+
         #board main quantum register
         self.qregister = QuantumRegister(width * height)
         
@@ -30,6 +36,12 @@ class Board:
         self.cbit_misc = ClassicalRegister(1)
 
         self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.mct_register, self.cregister, self.cbit_misc)
+
+    def perform_after_move(self):
+        if self.just_moved_ep:
+            self.just_moved_ep = False
+        else:
+            self.ep_pawn_point = None
 
     def in_bounds(self, x, y):
         if x < 0 or x >= self.width:
@@ -316,6 +328,9 @@ class Board:
 
         piece = self.classical_board[source.x][source.y]    
 
+        if not force and piece.type == PieceType.PAWN:
+            return self._standard_pawn_move(source, target)
+
         if not force and not piece.is_move_valid(source, target):
             print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
             return False
@@ -373,7 +388,7 @@ class Board:
                         """
                         if qutils.perform_capture_slide(self, source, target):
                             if self.does_slide_violate_double_occupancy(source, target):
-                                path_clear =  self.collapse_path(source, target, collapse_source=True)
+                                path_clear = self.collapse_path(source, target, collapse_source=True)
 
                                 if path_clear and self.classical_board[source.x][source.y] == NullPiece:
                                     self.classical_board[target.x][target.y] = piece
@@ -395,6 +410,97 @@ class Board:
 
         return True
 
+    def _standard_pawn_move(self, source, target):
+        pawn = self.classical_board[source.x][source.y]
+        target_piece = self.classical_board[target.x][target.y]
+
+        #all checks needed for the pawn are done here
+        move_type, ep_point = pawn.is_move_valid(source, target, board=self)
+        
+        if move_type == Pawn.MoveType.INVALID:
+            print('Invalid move - Incorrect move for piece type pawn')
+            return False
+
+        new_source_piece = pawn
+        new_target_piece = target_piece
+
+        if (
+            move_type == Pawn.MoveType.SINGLE_STEP or
+            move_type == Pawn.MoveType.DOUBLE_STEP
+        ):
+            self.collapse_by_flag(target_piece.qflag)
+
+            if (
+                self.classical_board[source.x][source.y] != NullPiece and
+                self.classical_board[target.x][target.y] == NullPiece
+            ):
+                if move_type == Pawn.MoveType.SINGLE_STEP:
+                    qutils.perform_standard_jump(self, source, target)
+
+                    new_source_piece = NullPiece
+                else:
+                    if not self.entangle_path_flags(pawn.qflag, source, target):
+                        new_source_piece = NullPiece
+
+                    qutils.perform_standard_slide(self, source, target)
+
+                new_target_piece = pawn
+
+        elif move_type == Pawn.MoveType.CAPTURE:
+            #pawn is the only piece that needs to collapse target when capturing
+            #because it can't move diagonally unless capturing
+            self.collapse_by_flag(pawn.qflag | target_piece.qflag)
+
+            if (
+                self.classical_board[source.x][source.y] != NullPiece and
+                self.classical_board[target.x][target.y] != NullPiece
+            ):
+                qutils.perform_capture_jump(self, source, target)
+
+                new_source_piece = NullPiece
+                new_target_piece = pawn
+
+        elif move_type == Pawn.MoveType.EN_PASSANT:
+            if target_piece == NullPiece:
+                qutils.perform_standard_en_passant(self, source, target, ep_point)
+
+                new_source_piece = NullPiece
+                new_target_piece = pawn
+                self.classical_board[ep_point.x][ep_point.y] = NullPiece
+
+            elif target_piece.color == pawn.color:
+                self.collapse_by_flag(target_piece.qflag)
+
+                if self.classical_board[target.x][target.y] == NullPiece:
+                    qutils.perform_standard_en_passant(self, source, target, ep_point)
+                    
+                    new_source_piece = NullPiece
+                    new_target_piece = pawn
+                    self.classical_board[ep_point.x][ep_point.y] = NullPiece
+            else:
+                self.collapse_by_flag(pawn.qflag)
+
+                if self.classical_board[source.x][source.y] != NullPiece:
+                    qutils.perform_capture_en_passant(self, source, target, ep_point)
+
+                    new_source_piece = NullPiece
+                    new_target_piece = pawn
+                    self.classical_board[ep_point.x][ep_point.y] = NullPiece
+
+        self.classical_board[source.x][source.y] = new_source_piece
+        self.classical_board[target.x][target.y] = new_target_piece
+
+        #update pawn information
+        if not pawn.has_moved:
+            pawn.has_moved = True
+
+            if move_type == Pawn.MoveType.DOUBLE_STEP:
+                self.ep_pawn_point = target
+                self.just_moved_ep = True
+
+        return True
+
+
     def split_move(self, source, target1, target2, force=False):
         if not self.in_bounds(source.x, source.y):
             print('Invalid move - Source square not in bounds')
@@ -411,12 +517,20 @@ class Board:
         if target1 == target2:
             print("Invalid move - Both split targets are the same square")
             return False
-        
+
         piece = self.classical_board[source.x][source.y]
 
-        if not force and (not piece.is_move_valid(source, target1) or not piece.is_move_valid(source, target2)):
-            print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
-            return False
+        if not force:
+            if piece.type == PieceType.PAWN:
+                print("Invalid move - Pawns can't perform split moves")
+                return False
+
+            if (
+                not piece.is_move_valid(source, target1) or 
+                not piece.is_move_valid(source, target2)
+            ):
+                print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
+                return False
 
         target_piece1 = self.classical_board[target1.x][target1.y]
         target_piece2 = self.classical_board[target2.x][target2.y]
@@ -480,12 +594,20 @@ class Board:
         piece1 = self.classical_board[source1.x][source1.y]
         piece2 = self.classical_board[source2.x][source2.y]
 
+        if not force:
+            if piece1.type == PieceType.PAWN or piece2.type == PieceType.PAWN:
+                print("Invalid move - Pawns can't perform merge moves")
+                return False
+
+            if (
+                not piece1.is_move_valid(source1, target) or 
+                not piece2.is_move_valid(source2, target)
+            ):
+                print('Invalid move - Incorrect move for piece type ' + piece1.type.lower())
+                return False
+
         if piece1 != piece2:
             print('Invalid move - Different type of merge source pieces')
-            return False
-
-        if not force and (not piece1.is_move_valid(source1, target) or not piece2.is_move_valid(source2, target)):
-            print('Invalid move - Incorrect move for piece type ' + piece1.type.lower())
             return False
 
         target_piece = self.classical_board[target.x][target.y]

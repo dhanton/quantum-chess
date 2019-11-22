@@ -269,7 +269,6 @@ def perform_standard_en_passant(board, source, target, ep_target):
     #holds if both source and ep_target are empty or not at the same time
     both_pieces_ancilla = board.aregister[1]
     board.qcircuit.reset(both_pieces_ancilla)
-    board.qcircuit.x(both_pieces_ancilla)
 
     board.qcircuit.ccx(qsource, qep_target, both_pieces_ancilla)
     board.qcircuit.x(both_pieces_ancilla)
@@ -296,7 +295,6 @@ def perform_capture_en_passant(board, source, target, ep_target):
     #   after the pawn moved and thus EP would not be not a valid move.
     any_piece_ancilla = board.aregister[2]
     board.qcircuit.reset(any_piece_ancilla)
-    board.qcircuit.x(any_piece_ancilla)
 
     board.qcircuit.cx(qep_target, any_piece_ancilla)
     board.qcircuit.cx(qtarget, any_piece_ancilla)

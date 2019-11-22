@@ -225,8 +225,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(100)
+        engine.run_tests(self)
 
     def test_bell_state(self):
         engine = QuantumTestEngine()

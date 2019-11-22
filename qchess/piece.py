@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 from .point import Point
 
-class PieceType(Enum):
+class PieceType(IntEnum):
     NONE = -1,
     PAWN = 0,
     KNIGHT = 1,
@@ -10,7 +10,7 @@ class PieceType(Enum):
     QUEEN = 4,
     KING = 5
 
-class Color(Enum):
+class Color(IntEnum):
     NONE = -1,
     BLACK = 0,
     WHITE = 1

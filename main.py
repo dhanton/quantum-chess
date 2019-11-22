@@ -44,15 +44,15 @@ def generate_micro_chess():
     board.add_piece(1, 0, Piece(PieceType.KNIGHT, Color.BLACK))
     board.add_piece(2, 0, Piece(PieceType.BISHOP, Color.BLACK))
     board.add_piece(3, 0, Piece(PieceType.ROOK, Color.BLACK))
-    board.add_piece(0, 1, Piece(PieceType.PAWN, Color.BLACK))
+    board.add_piece(3, 1, Pawn(Color.BLACK))
 
     board.add_piece(3, 4, Piece(PieceType.KING, Color.WHITE))
     board.add_piece(2, 4, Piece(PieceType.KNIGHT, Color.WHITE))
     board.add_piece(1, 4, Piece(PieceType.BISHOP, Color.WHITE))
     board.add_piece(0, 4, Piece(PieceType.ROOK, Color.WHITE))
-    board.add_piece(3, 3, Piece(PieceType.PAWN, Color.WHITE))
+    board.add_piece(3, 3, Pawn(Color.WHITE))
 
-    return board, 5
+    return board, board.height
 
 def test_game():
     board, height = generate_micro_chess()
@@ -72,6 +72,8 @@ def test_game():
 
         command = input('')
 
+        moved = False
+
         if len(command) == 4:
             #standard jump
             source = Point(ord(command[0]) - 97, height - int(command[1]))
@@ -83,6 +85,7 @@ def test_game():
 
             if board.standard_move(source, target):
                 current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
+                moved = True
 
         elif len(command) == 7:
             if command[2] == '^':
@@ -97,6 +100,7 @@ def test_game():
 
                 if board.split_move(source, target1, target2):
                     current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
+                    moved = True
             else:
                 #merge
                 source1 = Point(ord(command[0]) - 97, 4 - int(command[1]))
@@ -110,9 +114,14 @@ def test_game():
 
                 if board.merge_move(source1, source2, target):
                     current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
+                    moved = True
 
         if is_game_over(board):
             break
+
+        if moved:
+            moved = False
+            board.perform_after_move()
 
 def main():
     test_game()
