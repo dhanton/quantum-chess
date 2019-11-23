@@ -1,6 +1,6 @@
 import unittest
 
-from qchess.board import *
+from qchess.quantum_chess import *
 
 class TestPiece(unittest.TestCase):
     def test_equality(self):
@@ -152,20 +152,20 @@ class TestPiece(unittest.TestCase):
         pawn3.has_moved = True
 
         #clear board
-        board1 = Board(5, 5)
+        qchess1 = QChess(5, 5)
         
         #board with multiple pieces to capture
-        board2 = Board(5, 5)
-        board2.add_piece(1, 1, Piece(PieceType.KING, Color.BLACK))
-        board2.add_piece(3, 1, Piece(PieceType.KING, Color.BLACK))
-        board2.add_piece(1, 3, Piece(PieceType.KING, Color.WHITE))
-        board2.add_piece(3, 3, Piece(PieceType.KING, Color.WHITE))
+        qchess2 = QChess(5, 5)
+        qchess2.add_piece(1, 1, Piece(PieceType.KING, Color.BLACK))
+        qchess2.add_piece(3, 1, Piece(PieceType.KING, Color.BLACK))
+        qchess2.add_piece(1, 3, Piece(PieceType.KING, Color.WHITE))
+        qchess2.add_piece(3, 3, Piece(PieceType.KING, Color.WHITE))
 
         #board where one black pawn performs a double step (to test EP)
-        board3 = Board(5, 5)
-        board3.add_piece(source.x, source.y, pawn1)
-        board3.add_piece(1, 0, Pawn(Color.BLACK))
-        board3.standard_move(Point(1, 0), Point(1, 2))
+        qchess3 = QChess(5, 5)
+        qchess3.add_piece(source.x, source.y, pawn1)
+        qchess3.add_piece(1, 0, Pawn(Color.BLACK))
+        qchess3.standard_move(Point(1, 0), Point(1, 2))
 
         for x in range(25):
             i = x%5
@@ -174,104 +174,104 @@ class TestPiece(unittest.TestCase):
 
             #since the result is a tuple (move_type, EP_point) we need [0]
             #EP_point being None for most moves
-            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board1)[0]), clear[j][i])
-            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board2)[0]), white[j][i])
-            self.assertEqual(int(pawn2.is_move_valid(source, target, board=board2)[0]), black[j][i])
+            self.assertEqual(int(pawn1.is_move_valid(source, target, qchess=qchess1)[0]), clear[j][i])
+            self.assertEqual(int(pawn1.is_move_valid(source, target, qchess=qchess2)[0]), white[j][i])
+            self.assertEqual(int(pawn2.is_move_valid(source, target, qchess=qchess2)[0]), black[j][i])
 
-            self.assertEqual(int(pawn3.is_move_valid(source, target, board=board1)[0]), clear_already_moved[j][i])
+            self.assertEqual(int(pawn3.is_move_valid(source, target, qchess=qchess1)[0]), clear_already_moved[j][i])
 
-            self.assertEqual(int(pawn1.is_move_valid(source, target, board=board3)[0]), en_passant[j][i])
+            self.assertEqual(int(pawn1.is_move_valid(source, target, qchess=qchess3)[0]), en_passant[j][i])
 
-class TestBoard(unittest.TestCase):
-    def test_classical_board(self):
-        #test squared board
-        board = Board(3, 3)
-        self.assertEqual(board.classical_board[1][1], NullPiece)
-        board.classical_board[0][2] = Piece(PieceType.KING, Color.BLACK)
-        self.assertNotEqual(board.classical_board[0][2], NullPiece)
+class TestClassicalBoard(unittest.TestCase):
+    def test_classical_qboard(self):
+        #test squared qboard
+        qchess = QChess(3, 3)
+        self.assertEqual(qchess.board[1][1], NullPiece)
+        qchess.board[0][2] = Piece(PieceType.KING, Color.BLACK)
+        self.assertNotEqual(qchess.board[0][2], NullPiece)
         
         with self.assertRaises(IndexError):
-            board.classical_board[0][3]
-            board.classical_board[3][0]
-            board.classical_board[100][129]
-            board.classical_board[-1][-100]
+            qchess.board[0][3]
+            qchess.board[3][0]
+            qchess.board[100][129]
+            qchess.board[-1][-100]
 
         #test rectangular board
-        board = Board(5, 1)
-        self.assertEqual(board.classical_board[4][0], NullPiece)
-        board.classical_board[3][0] = Piece(PieceType.KING, Color.BLACK)
-        self.assertNotEqual(board.classical_board[3][0], NullPiece)
+        qchess = QChess(5, 1)
+        self.assertEqual(qchess.board[4][0], NullPiece)
+        qchess.board[3][0] = Piece(PieceType.KING, Color.BLACK)
+        self.assertNotEqual(qchess.board[3][0], NullPiece)
         
         with self.assertRaises(IndexError):
-            board.classical_board[0][1]
-            board.classical_board[5][0]
-            board.classical_board[100][129]
-            board.classical_board[-1][-100]
+            qchess.board[0][1]
+            qchess.board[5][0]
+            qchess.board[100][129]
+            qchess.board[-1][-100]
 
     def test_in_bounds(self):
         #test squared board
-        board = Board(3, 3)
-        self.assertFalse(board.in_bounds(3, 3))
-        self.assertFalse(board.in_bounds(124, 0))
-        self.assertFalse(board.in_bounds(0, 124))
-        self.assertTrue(board.in_bounds(0, 0))
-        self.assertTrue(board.in_bounds(2, 2))
+        qchess = QChess(3, 3)
+        self.assertFalse(qchess.in_bounds(3, 3))
+        self.assertFalse(qchess.in_bounds(124, 0))
+        self.assertFalse(qchess.in_bounds(0, 124))
+        self.assertTrue(qchess.in_bounds(0, 0))
+        self.assertTrue(qchess.in_bounds(2, 2))
 
         #test rectangular board
-        board = Board(5, 1)
-        self.assertFalse(board.in_bounds(3, 3))
-        self.assertFalse(board.in_bounds(124, 0))
-        self.assertFalse(board.in_bounds(0, 124))
-        self.assertTrue(board.in_bounds(0, 0))
-        self.assertTrue(board.in_bounds(4, 0))
+        qchess = QChess(5, 1)
+        self.assertFalse(qchess.in_bounds(3, 3))
+        self.assertFalse(qchess.in_bounds(124, 0))
+        self.assertFalse(qchess.in_bounds(0, 124))
+        self.assertTrue(qchess.in_bounds(0, 0))
+        self.assertTrue(qchess.in_bounds(4, 0))
 
     def test_is_occupied(self):
-        board = Board(2, 2)
-        board.classical_board[0][0] = Piece(PieceType.KING, Color.BLACK)
+        qchess = QChess(2, 2)
+        qchess.board[0][0] = Piece(PieceType.KING, Color.BLACK)
 
-        self.assertTrue(board.is_occupied(0, 0))
-        self.assertFalse(board.is_occupied(0, 1))
-        self.assertFalse(board.is_occupied(1, 0))
-        self.assertFalse(board.is_occupied(1, 1))
+        self.assertTrue(qchess.is_occupied(0, 0))
+        self.assertFalse(qchess.is_occupied(0, 1))
+        self.assertFalse(qchess.is_occupied(1, 0))
+        self.assertFalse(qchess.is_occupied(1, 1))
 
     def test_get_array_index(self):
         #there are 12 qubits, indexed 0...11
-        board = Board(3, 4)
+        qchess = QChess(3, 4)
 
-        self.assertEqual(board.get_array_index(0, 0), 0)
-        self.assertEqual(board.get_array_index(1, 0), 1)
-        self.assertEqual(board.get_array_index(2, 0), 2)
-        self.assertEqual(board.get_array_index(0, 1), 3)
-        self.assertEqual(board.get_array_index(1, 1), 4)
-        self.assertEqual(board.get_array_index(2, 1), 5)
-        self.assertEqual(board.get_array_index(0, 2), 6)
-        self.assertEqual(board.get_array_index(1, 2), 7)
-        self.assertEqual(board.get_array_index(2, 2), 8)
-        self.assertEqual(board.get_array_index(0, 3), 9)
-        self.assertEqual(board.get_array_index(1, 3), 10)
-        self.assertEqual(board.get_array_index(2, 3), 11)
+        self.assertEqual(qchess.get_array_index(0, 0), 0)
+        self.assertEqual(qchess.get_array_index(1, 0), 1)
+        self.assertEqual(qchess.get_array_index(2, 0), 2)
+        self.assertEqual(qchess.get_array_index(0, 1), 3)
+        self.assertEqual(qchess.get_array_index(1, 1), 4)
+        self.assertEqual(qchess.get_array_index(2, 1), 5)
+        self.assertEqual(qchess.get_array_index(0, 2), 6)
+        self.assertEqual(qchess.get_array_index(1, 2), 7)
+        self.assertEqual(qchess.get_array_index(2, 2), 8)
+        self.assertEqual(qchess.get_array_index(0, 3), 9)
+        self.assertEqual(qchess.get_array_index(1, 3), 10)
+        self.assertEqual(qchess.get_array_index(2, 3), 11)
         
     def test_get_board_point(self):
-        board = Board(3, 4)
+        qchess = QChess(3, 4)
 
-        self.assertEqual(board.get_board_point(0), Point(0, 0))
-        self.assertEqual(board.get_board_point(1), Point(1, 0))
-        self.assertEqual(board.get_board_point(2), Point(2, 0))
-        self.assertEqual(board.get_board_point(3), Point(0, 1))
-        self.assertEqual(board.get_board_point(4), Point(1, 1))
-        self.assertEqual(board.get_board_point(5), Point(2, 1))
-        self.assertEqual(board.get_board_point(6), Point(0, 2))
-        self.assertEqual(board.get_board_point(7), Point(1, 2))
-        self.assertEqual(board.get_board_point(9), Point(0, 3))
-        self.assertEqual(board.get_board_point(10), Point(1, 3))
-        self.assertEqual(board.get_board_point(11), Point(2, 3))
+        self.assertEqual(qchess.get_board_point(0), Point(0, 0))
+        self.assertEqual(qchess.get_board_point(1), Point(1, 0))
+        self.assertEqual(qchess.get_board_point(2), Point(2, 0))
+        self.assertEqual(qchess.get_board_point(3), Point(0, 1))
+        self.assertEqual(qchess.get_board_point(4), Point(1, 1))
+        self.assertEqual(qchess.get_board_point(5), Point(2, 1))
+        self.assertEqual(qchess.get_board_point(6), Point(0, 2))
+        self.assertEqual(qchess.get_board_point(7), Point(1, 2))
+        self.assertEqual(qchess.get_board_point(9), Point(0, 3))
+        self.assertEqual(qchess.get_board_point(10), Point(1, 3))
+        self.assertEqual(qchess.get_board_point(11), Point(2, 3))
 
     def test_simplified_matrix(self):
-        board = Board(3, 3)
-        board.add_piece(1, 0, Piece(PieceType.BISHOP, Color.BLACK))
-        board.add_piece(1, 1, Piece(PieceType.KING, Color.WHITE))
-        board.add_piece(2, 1, Piece(PieceType.PAWN, Color.WHITE))
-        board.add_piece(0, 2, Piece(PieceType.QUEEN, Color.BLACK))
+        qchess = QChess(3, 3)
+        qchess.add_piece(1, 0, Piece(PieceType.BISHOP, Color.BLACK))
+        qchess.add_piece(1, 1, Piece(PieceType.KING, Color.WHITE))
+        qchess.add_piece(2, 1, Piece(PieceType.PAWN, Color.WHITE))
+        qchess.add_piece(0, 2, Piece(PieceType.QUEEN, Color.BLACK))
 
         result = [
             ['0', 'b', '0'],
@@ -279,7 +279,7 @@ class TestBoard(unittest.TestCase):
             ['q', '0', '0'],
         ]
         
-        self.assertEqual(board.get_simplified_matrix(), result)
+        self.assertEqual(qchess.get_simplified_matrix(), result)
 
     def test_path_points(self):
         diagonal = [Point(1, 1), Point(2, 2), Point(3, 3)]
@@ -289,10 +289,10 @@ class TestBoard(unittest.TestCase):
         col = [Point(0, 1), Point(0, 2), Point(0, 3)]
         col_inv = [Point(0, 3), Point(0, 2), Point(0, 1)]
 
-        board = Board(5, 5)
-        self.assertEqual(board.get_path_points(Point(0, 0), Point(4, 4)), diagonal)
-        self.assertEqual(board.get_path_points(Point(0, 0), Point(0, 4)), col)
-        self.assertEqual(board.get_path_points(Point(0, 0), Point(4, 0)), row)
-        self.assertEqual(board.get_path_points(Point(4, 4), Point(0, 0)), diagonal_inv)
-        self.assertEqual(board.get_path_points(Point(0, 4), Point(0, 0)), col_inv)
-        self.assertEqual(board.get_path_points(Point(4, 0), Point(0, 0)), row_inv)
+        qchess = QChess(5, 5)
+        self.assertEqual(qchess.get_path_points(Point(0, 0), Point(4, 4)), diagonal)
+        self.assertEqual(qchess.get_path_points(Point(0, 0), Point(0, 4)), col)
+        self.assertEqual(qchess.get_path_points(Point(0, 0), Point(4, 0)), row)
+        self.assertEqual(qchess.get_path_points(Point(4, 4), Point(0, 0)), diagonal_inv)
+        self.assertEqual(qchess.get_path_points(Point(0, 4), Point(0, 0)), col_inv)
+        self.assertEqual(qchess.get_path_points(Point(4, 0), Point(0, 0)), row_inv)

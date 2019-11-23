@@ -14,13 +14,13 @@ class Pawn(Piece):
         
         self.has_moved = False
 
-    #we need to access the board to check type of piece
+    #we need to access the quantum chess to check type of piece
     #since capture and move have diferent validations
-    def is_move_valid(self, source, target, board=None):
+    def is_move_valid(self, source, target, qchess=None):
         if source == target:
             return Pawn.MoveType.INVALID, None
         
-        target_piece = board.classical_board[target.x][target.y]
+        target_piece = qchess.board[target.x][target.y]
 
         #check direction of pawn (-1 is from bottom to top in this coordinate system)
         dy = +1
@@ -51,8 +51,8 @@ class Pawn(Piece):
             target.y == source.y + dy
         ):
             #en passant has priority
-            if (board.ep_pawn_point and
-                board.ep_pawn_point == Point(target.x, target.y - dy)
+            if (qchess.ep_pawn_point and
+                qchess.ep_pawn_point == Point(target.x, target.y - dy)
             ):
                 return Pawn.MoveType.EN_PASSANT, Point(target.x, target.y - dy)
 

@@ -1,24 +1,22 @@
 import itertools
 
 from qiskit import *
-
 from . import qutils
-from .point import Point
-from .piece import *
-from .pawn import Pawn
 
-class Board:
-    def __init__(self, width, height):
-        self.qflag_index = 0
+from qchess.point import Point
+from qchess.piece import *
+from qchess.pawn import Pawn
+
+from qchess.engines.base_engine import BaseEngine
+
+class QiskitEngine(BaseEngine):
+    def __init__(self, qchess, width, height):
+        self.qchess = qchess
+        self.classical_board = qchess.board
         self.width = width
         self.height = height
 
-        self.classical_board = [[NullPiece for y in range(height)] for x in range(width)]
-        
-        #holds the position of the captureable en passant pawn
-        #none if the last move wasn't a pawn's double step
-        self.ep_pawn_point = None
-        self.just_moved_ep = False
+        self.qflag_index = 0
 
         #board main quantum register
         self.qregister = QuantumRegister(width * height)
@@ -37,107 +35,20 @@ class Board:
 
         self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.mct_register, self.cregister, self.cbit_misc)
 
-    def perform_after_move(self):
-        if self.just_moved_ep:
-            self.just_moved_ep = False
-        else:
-            self.ep_pawn_point = None
-
-    def in_bounds(self, x, y):
-        if x < 0 or x >= self.width:
-            return False
-        
-        if y < 0 or y >= self.height:
-            return False
-
-        return True
-
-    def is_occupied(self, x, y):
-        if self.classical_board[x][y] != NullPiece:
-            return True
-        return False
-
-    def get_array_index(self, x, y):
-        return self.width * y + x
-
-    def get_board_point(self, index):
-        return Point(index%self.width, int(index/self.width))
-
-    def get_qubit(self, x, y):
-        return self.qregister[self.get_array_index(x, y)]
-
-    def get_bit(self, x, y):
-        return self.cregister[self.get_array_index(x, y)]
-
-    def get_piece(self, index):
-        pos = self.get_board_point(index)
-        return self.classical_board[pos.x][pos.y]
-
-    def add_piece(self, x, y, piece):
-        if not self.in_bounds(x, y): return
-
-        if self.is_occupied(x, y):
-            print("add piece error - there is already a piece in that position")
-            return
-
+    def on_add_piece(self, x, y, piece):
         piece.qflag = 1 << self.qflag_index
         self.qflag_index += 1
-
-        self.classical_board[x][y] = piece
 
         #the value is already |0> (no piece)
         #since we want to add the piece with 100% probability, we swap to |1>
         q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
 
-    #deprecated
-    def _is_piece_collapsed(self, i):
-        piece = self.get_piece(i)
+    def get_qubit(self, x, y):
+        return self.qregister[self.qchess.get_array_index(x, y)]
 
-        if piece == NullPiece:
-            return False
-
-        for j in range(self.width * self.height):
-            if i == j: continue
-
-            p = self.get_piece(j)
-            
-            if  p.qflag & piece.qflag != 0:
-                return False
-
-        return True
-
-    def get_path_points(self, source, target):
-        #not including source or target
-        path = []
-        
-        if not self.in_bounds(source.x, source.y): return path 
-        if not self.in_bounds(target.x, target.y): return path
-        if source == target: return path
-
-        vec = target - source
-        if vec.x != 0 and vec.y != 0 and vec.x != vec.y: return path
-
-        x_iter = y_iter = 0
-
-        if vec.x != 0:
-            x_iter = vec.x/abs(vec.x)
-        if vec.y != 0:
-            y_iter = vec.y/abs(vec.y)
-
-        for i in range(1, max(abs(vec.x), abs(vec.y))):
-            path.append(source + Point(x_iter * i, y_iter * i))
-
-        return path
-
-    def get_path_pieces(self, source, target):
-        pieces = []
-
-        for point in self.get_path_points(source, target):
-            if self.classical_board[point.x][point.y] != NullPiece:
-                pieces.append(self.classical_board[point.x][point.y])
-        
-        return pieces
+    def get_bit(self, x, y):
+        return self.cregister[self.qchess.get_array_index(x, y)]
 
     def entangle_flags(self, qflag1, qflag2):
         #nullpiece
@@ -149,7 +60,7 @@ class Board:
             return
 
         for i in range(self.width * self.height):
-            piece = self.get_piece(i)
+            piece = self.qchess.get_piece(i)
 
             if piece.qflag & qflag1 != 0:
                 piece.qflag |= qflag2
@@ -160,7 +71,7 @@ class Board:
     def entangle_path_flags(self, qflag, source, target):
         all_qflags = 0
 
-        pieces = self.get_path_pieces(source, target)
+        pieces = self.qchess.get_path_pieces(source, target)
 
         for piece in pieces:
             all_qflags |= piece.qflag
@@ -177,7 +88,7 @@ class Board:
         collapsed_indices = []
 
         for i in range(self.width * self.height):
-            piece = self.get_piece(i)
+            piece = self.qchess.get_piece(i)
 
             if (
                 # not self.is_piece_collapsed(i) and
@@ -197,7 +108,7 @@ class Board:
 
         for i, char in enumerate(bitstring[::-1]):
             if char == '0' and i in collapsed_indices:
-                pos = self.get_board_point(i)
+                pos = self.qchess.get_board_point(i)
                 self.classical_board[pos.x][pos.y] = NullPiece
 
                 #set to |0> in circuit
@@ -211,7 +122,7 @@ class Board:
     def collapse_path(self, source, target, collapse_target=False, collapse_source=False):
         qflag = 0
 
-        for piece in self.get_path_pieces(source, target):
+        for piece in self.qchess.get_path_pieces(source, target):
             qflag |= piece.qflag
 
         source_piece = self.classical_board[source.x][source.y]
@@ -225,7 +136,13 @@ class Board:
         self.collapse_by_flag(qflag)
 
         #return true if path is clear after collapse
-        return not bool(self.get_path_pieces(source, target))
+        return not bool(self.qchess.get_path_pieces(source, target))
+
+    def collapse_point(self, x, y):
+        self.collapse_by_flag(self.classical_board[x][y].qflag)
+
+    def collapse_all(self):
+        self.collapse_by_flag(None, collapse_all=True)
 
     """
         This function will atempt (with only access to classical info)
@@ -245,10 +162,10 @@ class Board:
             return False
 
         entangled_points = []
-        path = self.get_path_points(source, target)
+        path = self.qchess.get_path_points(source, target)
 
         for i in range(self.width * self.height):
-            point = self.get_board_point(i)
+            point = self.qchess.get_board_point(i)
 
             if self.classical_board[point.x][point.y].qflag & target_piece.qflag != 0:
                 entangled_points.append(point)
@@ -256,7 +173,7 @@ class Board:
         #if a piece is blocking the path independently of the entanglement
         #of target, then DO is always violated
         for i, point in enumerate(path):
-            if not point in entangled_points and self.get_piece(i) != NullPiece:
+            if not point in entangled_points and self.qchess.get_piece(i) != NullPiece:
                 return True
 
         #the number of pieces is the number of 1s in the target qflag
@@ -288,52 +205,11 @@ class Board:
 
         return False
 
-    def ascii_render(self):
-        s = ""
-
-        for j in range(self.height):
-            for i in range(self.width):
-                piece = self.classical_board[i][j]
-                if piece:
-                    s += piece.as_notation() + ' '
-                else:
-                    s += '0 '
-            s += '\n'
-
-        print(s)
-
-    def get_simplified_matrix(self):
-        m = []
-
-        for j in range(self.height):
-            row = []
-            for i in range(self.width):
-                row.append(self.classical_board[i][j].as_notation())
-            m.append(row)
-
-        return m
-
     def standard_move(self, source, target, force=False):
-        if not self.in_bounds(source.x, source.y):
-            print('Invalid move - Source square not in bounds')
-            return False
-
-        if not self.in_bounds(target.x, target.y):
-            print('Invalid move - Target square not in bounds')
-            return False
-        
-        if not self.is_occupied(source.x, source.y):
-            print('Invalid move - Source square is empty')
-            return False
-
-        piece = self.classical_board[source.x][source.y]    
+        piece = self.classical_board[source.x][source.y]
 
         if not force and piece.type == PieceType.PAWN:
             return self._standard_pawn_move(source, target)
-
-        if not force and not piece.is_move_valid(source, target):
-            print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
-            return False
 
         target_piece = self.classical_board[target.x][target.y]
 
@@ -408,18 +284,14 @@ class Board:
                         self.classical_board[source.x][source.y] = NullPiece
                         self.classical_board[target.x][target.y] = piece
 
-        return True
-
     def _standard_pawn_move(self, source, target):
         pawn = self.classical_board[source.x][source.y]
         target_piece = self.classical_board[target.x][target.y]
 
-        #all checks needed for the pawn are done here
-        move_type, ep_point = pawn.is_move_valid(source, target, board=self)
+        move_type, ep_point = pawn.is_move_valid(source, target, qchess=self.qchess)
         
-        if move_type == Pawn.MoveType.INVALID:
-            print('Invalid move - Incorrect move for piece type pawn')
-            return False
+        #this is checked in QChess class
+        assert(move_type != Pawn.MoveType.INVALID)
 
         new_source_piece = pawn
         new_target_piece = target_piece
@@ -490,58 +362,10 @@ class Board:
         self.classical_board[source.x][source.y] = new_source_piece
         self.classical_board[target.x][target.y] = new_target_piece
 
-        #update pawn information
-        if not pawn.has_moved:
-            pawn.has_moved = True
-
-            if move_type == Pawn.MoveType.DOUBLE_STEP:
-                self.ep_pawn_point = target
-                self.just_moved_ep = True
-
-        return True
-
-
-    def split_move(self, source, target1, target2, force=False):
-        if not self.in_bounds(source.x, source.y):
-            print('Invalid move - Source square not in bounds')
-            return False
-
-        if not self.in_bounds(target1.x, target1.y) or not self.in_bounds(target2.x, target2.y):
-            print('Invalid move - Target square not in bounds')
-            return False
-        
-        if not self.is_occupied(source.x, source.y):
-            print('Invalid move - Source square is empty')
-            return False
-
-        if target1 == target2:
-            print("Invalid move - Both split targets are the same square")
-            return False
-
+    def split_move(self, source, target1, target2):
         piece = self.classical_board[source.x][source.y]
-
-        if not force:
-            if piece.type == PieceType.PAWN:
-                print("Invalid move - Pawns can't perform split moves")
-                return False
-
-            if (
-                not piece.is_move_valid(source, target1) or 
-                not piece.is_move_valid(source, target2)
-            ):
-                print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
-                return False
-
         target_piece1 = self.classical_board[target1.x][target1.y]
         target_piece2 = self.classical_board[target2.x][target2.y]
-
-        if target_piece1 != NullPiece and target_piece1.type != piece.type:
-            print("Invalid move - Target square is not empty")
-            return False
-
-        if target_piece2 != NullPiece and target_piece2.type != piece.type:
-            print("Invalid move - Target square is not empty")
-            return False
 
         new_source_piece = NullPiece
 
@@ -571,50 +395,11 @@ class Board:
 
         if target_piece1 == NullPiece and target_piece2 == NullPiece:
             self.classical_board[source.x][source.y] = new_source_piece
-
-        return True
     
-    def merge_move(self, source1, source2, target, force=False):
-        if not self.in_bounds(source1.x, source1.y):
-            print('Invalid move - Source square not in bounds')
-            return False
-
-        if not self.in_bounds(source2.x, source2.y):
-            print('Invalid move - Source square not in bounds')
-            return False
-
-        if not self.in_bounds(target.x, target.y):
-            print('Invalid move - Target square not in bounds')
-            return False
-
-        if source1 == source2:
-            print('Invalid move - Both merge sources are the same squares')
-            return False
-        
+    def merge_move(self, source1, source2, target):
         piece1 = self.classical_board[source1.x][source1.y]
         piece2 = self.classical_board[source2.x][source2.y]
-
-        if not force:
-            if piece1.type == PieceType.PAWN or piece2.type == PieceType.PAWN:
-                print("Invalid move - Pawns can't perform merge moves")
-                return False
-
-            if (
-                not piece1.is_move_valid(source1, target) or 
-                not piece2.is_move_valid(source2, target)
-            ):
-                print('Invalid move - Incorrect move for piece type ' + piece1.type.lower())
-                return False
-
-        if piece1 != piece2:
-            print('Invalid move - Different type of merge source pieces')
-            return False
-
         target_piece = self.classical_board[target.x][target.y]
-
-        if target_piece != NullPiece and target_piece.type != piece1.type:
-            print('Invalid move - Target square is not empty')
-            return False
 
         new_source1_piece = NullPiece
         new_source2_piece = NullPiece
@@ -643,5 +428,3 @@ class Board:
         if target_piece == NullPiece:
             self.classical_board[source1.x][source1.y] = new_source1_piece
             self.classical_board[source2.x][source2.y] = new_source2_piece
-
-        return True

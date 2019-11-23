@@ -1,6 +1,6 @@
 import unittest
 
-from qchess.board import *
+from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
 class TestJumpMove(unittest.TestCase):
@@ -31,9 +31,9 @@ class TestJumpMove(unittest.TestCase):
             1
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(1, 0), Point(0, 1))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(1, 0), Point(0, 1))
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.merge_move(Point(0, 1), Point(1, 0), Point(1, 1)))
@@ -70,11 +70,11 @@ class TestJumpMove(unittest.TestCase):
             0.25
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(1, 0), Point(0, 1))
-            board.split_move(Point(1, 0), Point(1, 1), Point(2, 1))
-            board.add_piece(1, 2, Piece(PieceType.KING, Color.BLACK))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(1, 0), Point(0, 1))
+            qchess.split_move(Point(1, 0), Point(1, 1), Point(2, 1))
+            qchess.add_piece(1, 2, Piece(PieceType.KING, Color.BLACK))
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 1), Point(1, 2)))
@@ -110,11 +110,11 @@ class TestJumpMove(unittest.TestCase):
             0.25
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.PAWN, Color.WHITE))
-            board.split_move(Point(0, 0), Point(1, 0), Point(0, 1), force=True)
-            board.split_move(Point(1, 0), Point(1, 1), Point(2, 1), force=True)
-            board.add_piece(1, 2, Piece(PieceType.KING, Color.WHITE))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.PAWN, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(1, 0), Point(0, 1), force=True)
+            qchess.split_move(Point(1, 0), Point(1, 1), Point(2, 1), force=True)
+            qchess.add_piece(1, 2, Piece(PieceType.KING, Color.WHITE))
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 2), Point(1, 1)))
@@ -141,14 +141,14 @@ class TestJumpMove(unittest.TestCase):
             0.5
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.add_piece(0, 2, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.add_piece(0, 2, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
 
-        def action(board):
-            board.standard_move(Point(0, 2), Point(1, 1))
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.standard_move(Point(0, 2), Point(1, 1))
+            qchess.engine.collapse_all()
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
@@ -184,14 +184,14 @@ class TestJumpMove(unittest.TestCase):
             0.5
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.add_piece(0, 2, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.add_piece(0, 2, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
 
-        def action(board):
-            board.merge_move(Point(0, 1), Point(0, 2), Point(1, 2))
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.merge_move(Point(0, 1), Point(0, 2), Point(1, 2))
+            qchess.engine.collapse_all()
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
@@ -218,13 +218,13 @@ class TestJumpMove(unittest.TestCase):
             0.5
         )
 
-        def board_factory(board):
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.add_piece(1, 1, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.add_piece(1, 1, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(0, 1), Point(1, 1))
 
-        def action(board):
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.engine.collapse_all()
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)

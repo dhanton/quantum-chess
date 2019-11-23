@@ -1,4 +1,4 @@
-from qchess.board import Board
+from qchess.quantum_chess import QChess
 
 class QuantumTestEngine():
     def __init__(self):
@@ -25,12 +25,12 @@ class QuantumTestEngine():
         self.n = n
 
         for i in range(n):
-            board = Board(self.width, self.height)
-            self.board_factory(board)
-            self.action(board)
+            qchess = QChess(self.width, self.height)
+            self.board_factory(qchess)
+            self.action(qchess)
 
             for bstate in self.posible_bstates:
-                if bstate['state'] == board.get_simplified_matrix():
+                if bstate['state'] == qchess.get_simplified_matrix():
                     bstate['count'] += 1
                     break
 

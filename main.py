@@ -1,17 +1,17 @@
-from qchess.board import *
-import os
+from qchess.quantum_chess import *
 
+import os
 import signal
 import sys
 
-def is_game_over(board):
+def is_game_over(qchess):
     black_king_count = 0
     white_king_count = 0
 
     msg = None
 
-    for i in range(board.width * board.height):
-        piece = board.get_piece(i)
+    for i in range(qchess.width * qchess.height):
+        piece = qchess.get_piece(i)
 
         if piece.type == PieceType.KING:
             if piece.color == Color.WHITE:
@@ -30,7 +30,7 @@ def is_game_over(board):
 
     if msg:
         os.system('clear')
-        board.ascii_render()
+        qchess.ascii_render()
         print(msg)
 
         return True
@@ -39,36 +39,37 @@ def is_game_over(board):
 
 
 def generate_micro_chess():
-    board = Board(4, 5)
-    board.add_piece(0, 0, Piece(PieceType.KING, Color.BLACK))
-    board.add_piece(1, 0, Piece(PieceType.KNIGHT, Color.BLACK))
-    board.add_piece(2, 0, Piece(PieceType.BISHOP, Color.BLACK))
-    board.add_piece(3, 0, Piece(PieceType.ROOK, Color.BLACK))
-    board.add_piece(3, 1, Pawn(Color.BLACK))
+    qchess = QChess(4, 5)
+    qchess.add_piece(0, 0, Piece(PieceType.KING, Color.BLACK))
+    qchess.add_piece(1, 0, Piece(PieceType.KNIGHT, Color.BLACK))
+    qchess.add_piece(2, 0, Piece(PieceType.BISHOP, Color.BLACK))
+    qchess.add_piece(3, 0, Piece(PieceType.ROOK, Color.BLACK))
+    qchess.add_piece(3, 1, Pawn(Color.BLACK))
 
-    board.add_piece(3, 4, Piece(PieceType.KING, Color.WHITE))
-    board.add_piece(2, 4, Piece(PieceType.KNIGHT, Color.WHITE))
-    board.add_piece(1, 4, Piece(PieceType.BISHOP, Color.WHITE))
-    board.add_piece(0, 4, Piece(PieceType.ROOK, Color.WHITE))
-    board.add_piece(3, 3, Pawn(Color.WHITE))
+    qchess.add_piece(3, 4, Piece(PieceType.KING, Color.WHITE))
+    qchess.add_piece(2, 4, Piece(PieceType.KNIGHT, Color.WHITE))
+    qchess.add_piece(1, 4, Piece(PieceType.BISHOP, Color.WHITE))
+    qchess.add_piece(0, 4, Piece(PieceType.ROOK, Color.WHITE))
+    qchess.add_piece(3, 3, Pawn(Color.WHITE))
 
-    return board, board.height
+    return qchess, qchess.height
 
 def test_game():
-    board, height = generate_micro_chess()
+    qchess, height = generate_micro_chess()
 
     current_player = Color.WHITE
 
     def signal_handler(sig, frame):
-        print("Circuit:")
-        print(board.qcircuit.draw())
-        sys.exit(0)
+        if type(qchess.engine) == QiskitEngine:
+            print("Circuit:")
+            print(qchess.engine.qcircuit.draw())
+            sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
 
     while(True):
         os.system('clear')
-        board.ascii_render()
+        qchess.ascii_render()
 
         command = input('')
 
@@ -79,11 +80,11 @@ def test_game():
             source = Point(ord(command[0]) - 97, height - int(command[1]))
             target = Point(ord(command[2]) - 97, height - int(command[3]))
 
-            if board.classical_board[source.x][source.y].color != current_player:
+            if qchess.board[source.x][source.y].color != current_player:
                 print('Invalid piece color')
                 continue
 
-            if board.standard_move(source, target):
+            if qchess.standard_move(source, target):
                 current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
                 moved = True
 
@@ -94,11 +95,11 @@ def test_game():
                 target1 = Point(ord(command[3]) - 97, height - int(command[4]))
                 target2 = Point(ord(command[5]) - 97, height - int(command[6]))
 
-                if board.classical_board[source.x][source.y].color != current_player:
+                if qchess.board[source.x][source.y].color != current_player:
                     print('Invalid piece color')
                     continue
 
-                if board.split_move(source, target1, target2):
+                if qchess.split_move(source, target1, target2):
                     current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
                     moved = True
             else:
@@ -107,21 +108,21 @@ def test_game():
                 source2 = Point(ord(command[2]) - 97, 4 - int(command[3]))
                 target = Point(ord(command[5]) - 97, 4 - int(command[6]))
                 
-                if board.classical_board[source1.x][source1.y].color != current_player or \
-                    board.classical_board[source2.x][source2.y].color != current_player:
+                if qchess.board[source1.x][source1.y].color != current_player or \
+                    qchess.board[source2.x][source2.y].color != current_player:
                     print('Invalid piece color')
                     continue
 
-                if board.merge_move(source1, source2, target):
+                if qchess.merge_move(source1, source2, target):
                     current_player = Color.WHITE if current_player == Color.BLACK else Color.BLACK
                     moved = True
 
-        if is_game_over(board):
+        if is_game_over(qchess):
             break
 
         if moved:
             moved = False
-            board.perform_after_move()
+            qchess.perform_after_move()
 
 def main():
     test_game()

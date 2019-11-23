@@ -1,6 +1,6 @@
 import unittest
 
-from qchess.board import *
+from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
 class TestPawnMove(unittest.TestCase):
@@ -15,13 +15,13 @@ class TestPawnMove(unittest.TestCase):
             1
         )
 
-        def board_factory(board):
-            board.add_piece(1, 2, Pawn(Color.WHITE))
-            board.add_piece(0, 1, Piece(PieceType.KNIGHT, Color.BLACK))
+        def board_factory(qchess):
+            qchess.add_piece(1, 2, Pawn(Color.WHITE))
+            qchess.add_piece(0, 1, Piece(PieceType.KNIGHT, Color.BLACK))
             
-        def action(board):
-            board.standard_move(Point(1, 2), Point(0, 1))
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.standard_move(Point(1, 2), Point(0, 1))
+            qchess.engine.collapse_all()
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
@@ -39,14 +39,14 @@ class TestPawnMove(unittest.TestCase):
             1
         )
 
-        def board_factory(board):
-            board.add_piece(2, 2, Pawn(Color.WHITE))
-            board.add_piece(1, 0, Pawn(Color.BLACK))
-            board.standard_move(Point(1, 0), Point(1, 2))
+        def board_factory(qchess):
+            qchess.add_piece(2, 2, Pawn(Color.WHITE))
+            qchess.add_piece(1, 0, Pawn(Color.BLACK))
+            qchess.standard_move(Point(1, 0), Point(1, 2))
             
-        def action(board):
-            board.standard_move(Point(2, 2), Point(1, 1))
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.standard_move(Point(2, 2), Point(1, 1))
+            qchess.engine.collapse_all()
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
@@ -73,16 +73,16 @@ class TestPawnMove(unittest.TestCase):
             0.5
         )
 
-        def board_factory(board):
-            board.add_piece(2, 2, Pawn(Color.WHITE))
-            board.add_piece(1, 0, Pawn(Color.BLACK))
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.BLACK))
-            board.split_move(Point(0, 0), Point(1, 1), Point(0, 1))
-            board.standard_move(Point(1, 0), Point(1, 2))
+        def board_factory(qchess):
+            qchess.add_piece(2, 2, Pawn(Color.WHITE))
+            qchess.add_piece(1, 0, Pawn(Color.BLACK))
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.BLACK))
+            qchess.split_move(Point(0, 0), Point(1, 1), Point(0, 1))
+            qchess.standard_move(Point(1, 0), Point(1, 2))
             
-        def action(board):
-            board.standard_move(Point(2, 2), Point(1, 1))
-            board.collapse_by_flag(None, collapse_all=True)
+        def action(qchess):
+            qchess.standard_move(Point(2, 2), Point(1, 1))
+            qchess.engine.collapse_all()
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
@@ -109,15 +109,15 @@ class TestPawnMove(unittest.TestCase):
             0.5
         )
 
-        def board_factory(board):
-            board.add_piece(2, 2, Pawn(Color.WHITE))
-            board.add_piece(1, 0, Pawn(Color.BLACK))
-            board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
-            board.split_move(Point(0, 0), Point(1, 1), Point(0, 1))
-            board.standard_move(Point(1, 0), Point(1, 2))
+        def board_factory(qchess):
+            qchess.add_piece(2, 2, Pawn(Color.WHITE))
+            qchess.add_piece(1, 0, Pawn(Color.BLACK))
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(1, 1), Point(0, 1))
+            qchess.standard_move(Point(1, 0), Point(1, 2))
             
-        def action(board):
-            board.standard_move(Point(2, 2), Point(1, 1))
+        def action(qchess):
+            qchess.standard_move(Point(2, 2), Point(1, 1))
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
