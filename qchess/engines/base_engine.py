@@ -7,6 +7,10 @@ class BaseEngine(ABC):
     """
 
     @abstractmethod
+    def get_all_entangled_points(self, x, y):
+        raise NotImplementedError()
+
+    @abstractmethod
     def collapse_point(self, x, y):
         raise NotImplementedError()
 

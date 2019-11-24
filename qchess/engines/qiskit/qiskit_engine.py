@@ -50,6 +50,18 @@ class QiskitEngine(BaseEngine):
     def get_bit(self, x, y):
         return self.cregister[self.qchess.get_array_index(x, y)]
 
+    def get_all_entangled_points(self, x, y):
+        points = []
+        qflag = self.classical_board[x][y].qflag
+
+        if qflag != 0:
+            for i in range(self.width):
+                for j in range(self.height):
+                    if self.classical_board[i][j].qflag & qflag != 0:
+                        points.append(Point(i, j))
+        
+        return points
+
     def entangle_flags(self, qflag1, qflag2):
         #nullpiece
         if not qflag1 or not qflag2:

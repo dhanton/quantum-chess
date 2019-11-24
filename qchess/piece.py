@@ -15,6 +15,12 @@ class Color(IntEnum):
     BLACK = 0,
     WHITE = 1
 
+    def opposite(color):
+        if color == Color.NONE:
+            return Color.NONE
+        else:
+            return Color.WHITE if color == Color.BLACK else Color.BLACK
+
 class Piece:
     def __init__(self, piece_type, color):
         self.type = piece_type

@@ -51,7 +51,8 @@ class Pawn(Piece):
             target.y == source.y + dy
         ):
             #en passant has priority
-            if (qchess.ep_pawn_point and
+            if (
+                qchess.ep_pawn_point and
                 qchess.ep_pawn_point == Point(target.x, target.y - dy)
             ):
                 return Pawn.MoveType.EN_PASSANT, Point(target.x, target.y - dy)
