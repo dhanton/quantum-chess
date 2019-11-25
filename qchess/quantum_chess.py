@@ -8,28 +8,50 @@ from .piece import *
 from .pawn import Pawn
 
 class QChess:
-    def __init__(self, width, height):
+    def __init__(self, width, height, game_mode=None):
+        #default values
+        self.current_turn = Color.WHITE
+        self.pawn_double_step_allowed = True
+
+        if game_mode:
+            assert('board' in game_mode)
+
+            #the color of the current player
+            if 'starting_color' in game_mode:
+                if game_mode['starting_color'] == 'Black':
+                    self.current_turn = Color.BLACK
+
+            #some modes with smaller boards may disable pawn's double step
+            if 'pawn_double_step_allowed' in game_mode:
+                self.pawn_double_step_allowed = game_mode['pawn_double_step_allowed']
+
+            height = len(game_mode['board'])
+            assert(height > 0)
+            width = len(game_mode['board'][0])
+        
         self.width = width
         self.height = height
 
         self.board = [[NullPiece for y in range(height)] for x in range(width)]
+
+        #default engine is QiskitEngine
+        #TODO: Read engine from game_mode dict
+        self.engine = QiskitEngine(self, width, height)
         
         #holds the position of the captureable en passant pawn
         #none if the last move wasn't a pawn's double step
         self.ep_pawn_point = None
         self.just_moved_ep = False
 
-        #the color of the current player
-        #TODO: Load starting color from json file
-        self.current_turn = Color.WHITE
         self.ended = False
 
-        #default engine is QiskitEngine
-        #TODO: Change engine from command line or Menubar
-        self.engine = QiskitEngine(self, width, height)
+        if game_mode:
+            #populate board
+            for j, row in enumerate(game_mode['board']):
+                for i, notation in enumerate(row):
+                    if notation == '0': continue
 
-        #TODO: Initial states should be stored in json files
-        #      and selected from menu bar or command line
+                    self.add_piece(i, j, Piece.from_notation(notation))
 
     def perform_after_move(self):
         if self.just_moved_ep:
@@ -98,6 +120,9 @@ class QChess:
         if self.is_occupied(x, y):
             print("add piece error - there is already a piece in that position")
             return
+
+        if piece.type == PieceType.PAWN and not self.pawn_double_step_allowed:
+            piece.double_step_allowed = False
 
         self.board[x][y] = piece
 
@@ -279,13 +304,16 @@ class QChess:
                 left_click.Widget.bind("<Button-3>", right_click.ButtonReboundCallback)
 
     def main_loop(self):
+        self.ended = False
+
         while True:
             event, value = self.window.read(timeout=50)
 
             if event in (None, 'Exit'):
                 break
+
             #change move type (standard, split, merge)
-            elif event == 'MOVE-TYPE' or event == 's':
+            elif event == 'MOVE-TYPE' or 's' in event:
                 self.current_move = (self.current_move + 1) % 3
                 new_text = self.move_types[self.current_move]['name']
 
@@ -367,9 +395,14 @@ class QChess:
                             self.select_button(p.x, p.y, 'Green')
 
                         self.showing_entanglement = False
-                    else:
+
+                    elif self.board[a.x][a.y] != NullPiece:
                         #deselect previous selected entangled points
                         self.redraw_board(only_color='Purple')
+
+                        #select the previous move again
+                        for p in self.prev_move_points:
+                            self.select_button(p.x, p.y, 'Green')
 
                         #select all entangled points
                         points = self.engine.get_all_entangled_points(a.x, a.y)

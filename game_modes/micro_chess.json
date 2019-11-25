@@ -1,0 +1,12 @@
+{
+    "board": [
+        ["k", "n", "b", "r"],
+        ["p", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "P"],
+        ["R", "B", "N", "K"]
+    ],
+
+    "pawn_double_step_allowed": false,
+    "starting_color": "White"
+}

@@ -305,9 +305,6 @@ class QiskitEngine(BaseEngine):
         #this is checked in QChess class
         assert(move_type != Pawn.MoveType.INVALID)
 
-        new_source_piece = pawn
-        new_target_piece = target_piece
-
         if (
             move_type == Pawn.MoveType.SINGLE_STEP or
             move_type == Pawn.MoveType.DOUBLE_STEP
@@ -321,14 +318,14 @@ class QiskitEngine(BaseEngine):
                 if move_type == Pawn.MoveType.SINGLE_STEP:
                     qutils.perform_standard_jump(self, source, target)
 
-                    new_source_piece = NullPiece
+                    self.classical_board[source.x][source.y] = NullPiece
                 else:
                     if not self.entangle_path_flags(pawn.qflag, source, target):
-                        new_source_piece = NullPiece
+                        self.classical_board[source.x][source.y] = NullPiece
 
                     qutils.perform_standard_slide(self, source, target)
 
-                new_target_piece = pawn
+                self.classical_board[target.x][target.y] = pawn
 
         elif move_type == Pawn.MoveType.CAPTURE:
             #pawn is the only piece that needs to collapse target when capturing
@@ -341,15 +338,15 @@ class QiskitEngine(BaseEngine):
             ):
                 qutils.perform_capture_jump(self, source, target)
 
-                new_source_piece = NullPiece
-                new_target_piece = pawn
+                self.classical_board[source.x][source.y] = NullPiece
+                self.classical_board[target.x][target.y] = pawn
 
         elif move_type == Pawn.MoveType.EN_PASSANT:
             if target_piece == NullPiece:
                 qutils.perform_standard_en_passant(self, source, target, ep_point)
 
-                new_source_piece = NullPiece
-                new_target_piece = pawn
+                self.classical_board[source.x][source.y] = NullPiece
+                self.classical_board[target.x][target.y] = pawn
                 self.classical_board[ep_point.x][ep_point.y] = NullPiece
 
             elif target_piece.color == pawn.color:
@@ -358,8 +355,8 @@ class QiskitEngine(BaseEngine):
                 if self.classical_board[target.x][target.y] == NullPiece:
                     qutils.perform_standard_en_passant(self, source, target, ep_point)
                     
-                    new_source_piece = NullPiece
-                    new_target_piece = pawn
+                    self.classical_board[source.x][source.y] = NullPiece
+                    self.classical_board[target.x][target.y] = pawn
                     self.classical_board[ep_point.x][ep_point.y] = NullPiece
             else:
                 self.collapse_by_flag(pawn.qflag)
@@ -367,12 +364,9 @@ class QiskitEngine(BaseEngine):
                 if self.classical_board[source.x][source.y] != NullPiece:
                     qutils.perform_capture_en_passant(self, source, target, ep_point)
 
-                    new_source_piece = NullPiece
-                    new_target_piece = pawn
+                    self.classical_board[source.x][source.y] = NullPiece
+                    self.classical_board[target.x][target.y] = pawn
                     self.classical_board[ep_point.x][ep_point.y] = NullPiece
-
-        self.classical_board[source.x][source.y] = new_source_piece
-        self.classical_board[target.x][target.y] = new_target_piece
 
     def split_move(self, source, target1, target2):
         piece = self.classical_board[source.x][source.y]

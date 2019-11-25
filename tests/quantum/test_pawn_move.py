@@ -28,6 +28,38 @@ class TestPawnMove(unittest.TestCase):
         engine.run_engine(100)
         engine.run_tests(self)
 
+    def test_capture_split_piece(self):
+        engine = QuantumTestEngine()
+        engine.add_board_state(
+            [
+                ['p', '0', '0'],
+                ['0', '0', 'K'],
+                ['0', '0', '0'],
+            ],
+            0.5
+        )
+
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', 'p', '0'],
+                ['0', '0', '0'],
+            ],
+            0.5
+        )
+
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Pawn(Color.BLACK))
+            qchess.add_piece(1, 2, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(1, 2), Point(1, 1), Point(2, 1))
+            
+        #we don't use collapse_all here since we want to make sure the pawn collapses the king properly    
+        
+        engine.set_board_factory(3, 3, board_factory)
+        engine.set_action(lambda qchess: qchess.standard_move(Point(0, 0), Point(1, 1)))
+        engine.run_engine(500)
+        engine.run_tests(self, delta=0.07)
+
     def test_en_passant(self):
         engine = QuantumTestEngine()
         engine.add_board_state(

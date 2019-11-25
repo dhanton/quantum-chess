@@ -14,6 +14,9 @@ class Pawn(Piece):
         
         self.has_moved = False
 
+        #may be toggled off by certain game modes
+        self.double_step_allowed = True
+
     #we need to access the quantum chess to check type of piece
     #since capture and move have diferent validations
     def is_move_valid(self, source, target, qchess=None):
@@ -30,12 +33,10 @@ class Pawn(Piece):
         if target.x == source.x:
             #only allow jumps to collapsed pawns or any entangle piece or null pieces
             #TODO: Implement when piece.collapsed is implemented
-            # if target_piece != NullPiece and target_piece != self:
-                # return Pawn.MoveType.INVALID, None
 
             if target.y == source.y + 2*dy:
-                #double jump
-                if self.has_moved:
+                #double step
+                if self.has_moved or not self.double_step_allowed:
                     return Pawn.MoveType.INVALID, None
 
                 else:

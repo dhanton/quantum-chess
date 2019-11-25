@@ -3,6 +3,8 @@ from qchess.quantum_chess import *
 import os
 import signal
 import sys
+import argparse
+import json
 
 #deprecated
 def generate_micro_chess():
@@ -94,7 +96,28 @@ def test_game():
             qchess.perform_after_move()
 
 def main():
-    qchess = QChess(3, 3)
+    parser = argparse.ArgumentParser(description='Quantum Chess.')
+
+    #TODO: Implement this ascii renderer and input within QChess
+    parser.add_argument('--ascii-render', help='Use the basic ascii renderer instead of PySimpleGUI.',
+                        action='store_true')
+
+    parser.add_argument('--game-mode', help='Select a json game mode configuration file.',
+                        default='micro_chess', metavar='FILE')
+
+    args = parser.parse_args()
+
+    GAME_MODE_PATH = 'game_modes'
+
+    try:
+        json_data = open(os.path.join(GAME_MODE_PATH, args.game_mode + '.json'))
+    except FileNotFoundError:
+        print('Error while loading game mode file - File not found')
+        return
+
+    game_mode = json.load(json_data)
+
+    qchess = QChess(0, 0, game_mode=game_mode)
 
     qchess.create_window()
     qchess.main_loop()

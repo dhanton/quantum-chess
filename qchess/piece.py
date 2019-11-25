@@ -47,6 +47,36 @@ class Piece:
 
         return result
 
+    #create a new instance of class from notation ('P', 'K', 'q', etc)
+    def from_notation(notation):
+        piece = Piece(PieceType.NONE, Color.NONE)
+
+        if notation == '0':
+            piece = NullPiece
+        else:
+            if notation.islower():
+                piece.color = Color.BLACK
+                notation = notation.upper()
+            else:
+                piece.color = Color.WHITE
+
+            if notation == 'N':
+                piece.type = PieceType.KNIGHT
+            elif notation == 'P':
+                import qchess.pawn 
+
+                return qchess.pawn.Pawn(piece.color)
+            else:
+                remaining_types = [PieceType.KING, PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP]
+
+                for ptype in remaining_types:
+                    if ptype.name[0] == notation:
+                        piece.type = ptype
+                        break
+
+        return piece
+        
+
     def is_move_slide(self):
         return (
             self.type == PieceType.BISHOP or

@@ -40,6 +40,20 @@ class TestPiece(unittest.TestCase):
         self.assertEqual(Piece(PieceType.KING, Color.BLACK).as_notation(), 'k')
         self.assertEqual(Piece(PieceType.KING, Color.WHITE).as_notation(), 'K')
     
+    def test_from_notation(self):
+        self.assertEqual(Piece.from_notation('p'), Piece(PieceType.PAWN, Color.BLACK))
+        self.assertEqual(Piece.from_notation('P'), Piece(PieceType.PAWN, Color.WHITE))
+        self.assertEqual(Piece.from_notation('n'), Piece(PieceType.KNIGHT, Color.BLACK))
+        self.assertEqual(Piece.from_notation('N'), Piece(PieceType.KNIGHT, Color.WHITE))
+        self.assertEqual(Piece.from_notation('b'), Piece(PieceType.BISHOP, Color.BLACK))
+        self.assertEqual(Piece.from_notation('B'), Piece(PieceType.BISHOP, Color.WHITE))
+        self.assertEqual(Piece.from_notation('r'), Piece(PieceType.ROOK, Color.BLACK))
+        self.assertEqual(Piece.from_notation('R'), Piece(PieceType.ROOK, Color.WHITE))
+        self.assertEqual(Piece.from_notation('q'), Piece(PieceType.QUEEN, Color.BLACK))
+        self.assertEqual(Piece.from_notation('Q'), Piece(PieceType.QUEEN, Color.WHITE))
+        self.assertEqual(Piece.from_notation('k'), Piece(PieceType.KING, Color.BLACK))
+        self.assertEqual(Piece.from_notation('K'), Piece(PieceType.KING, Color.WHITE))
+
     def test_is_move_valid(self):
         #Board is 5x5 always
         #Every piece is always in the center
