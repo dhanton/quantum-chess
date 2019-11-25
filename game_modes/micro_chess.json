@@ -7,6 +7,5 @@
         ["R", "B", "N", "K"]
     ],
 
-    "pawn_double_step_allowed": false,
-    "starting_color": "White"
+    "pawn_double_step_allowed": false
 }

@@ -183,9 +183,9 @@ class QiskitEngine(BaseEngine):
                 entangled_points.append(point)
 
         #if a piece is blocking the path independently of the entanglement
-        #of target, then DO is always violated
-        for i, point in enumerate(path):
-            if not point in entangled_points and self.qchess.get_piece(i) != NullPiece:
+        #of target, then DO is violated
+        for point in path:
+            if self.classical_board[point.x][point.y] != NullPiece and not point in entangled_points:
                 return True
 
         #the number of pieces is the number of 1s in the target qflag

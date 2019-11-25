@@ -10,7 +10,7 @@ class TestSlideStandardMove(unittest.TestCase):
             [
                 ['Q', '0', '0'],
                 ['0', 'k', '0'],
-                ['0', '0', 'k'],
+                ['0', '0', 'n'],
             ],
             0.5
         )
@@ -26,7 +26,7 @@ class TestSlideStandardMove(unittest.TestCase):
 
         def board_factory(qchess):
             qchess.add_piece(0, 0, Piece(PieceType.QUEEN, Color.WHITE))
-            qchess.add_piece(2, 2, Piece(PieceType.KING, Color.BLACK))
+            qchess.add_piece(2, 2, Piece(PieceType.KNIGHT, Color.BLACK))
             qchess.add_piece(1, 0, Piece(PieceType.KING, Color.BLACK))
             qchess.split_move(Point(1, 0), Point(1, 1), Point(0, 1))
 
@@ -183,10 +183,14 @@ class TestSlideStandardMove(unittest.TestCase):
         )
         
         """
-            When measuring the (3, 3) queen to move the rook,
-            the King collapses even though the queen never could get past it.
-            This is because they're entangled, so when one collapses
-            the other does too.
+            Even though the queen can never get past the kings, they are still entangled,
+            and the queen is shown in the target position as well. This is because
+            QiskitEngine avoids simulating quantum states and only gets the same info it
+            would from a real quantum computer.
+
+            So the engine doesn't know that, even though the kings are split,
+            the path is always blocked. Because the kings are split it assumes
+            there is a posibility the path is clear and the queen is in the target position.
         """
 
         def board_factory(qchess):
