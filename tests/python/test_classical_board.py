@@ -54,6 +54,25 @@ class TestPiece(unittest.TestCase):
         self.assertEqual(Piece.from_notation('k'), Piece(PieceType.KING, Color.BLACK))
         self.assertEqual(Piece.from_notation('K'), Piece(PieceType.KING, Color.WHITE))
 
+    def test_string_to_point(self):
+        qchess = QChess(3, 3)
+        self.assertEqual(qchess.string_to_point('a1'), Point(0, 2))
+        self.assertEqual(qchess.string_to_point('c3'), Point(2, 0))
+        self.assertEqual(qchess.string_to_point('c1'), Point(2, 2))
+        self.assertEqual(qchess.string_to_point('a3'), Point(0, 0))
+        self.assertEqual(qchess.string_to_point('f1'), None)
+        self.assertEqual(qchess.string_to_point('a8'), None)
+        self.assertEqual(qchess.string_to_point('a8b8'), None)
+        
+    def test_command_to_move_points(self):
+        qchess = QChess(3, 3)
+        self.assertEqual(qchess.command_to_move_points('a1c1'), (0, [Point(0, 2), Point(2, 2)]))
+        self.assertEqual(qchess.command_to_move_points('a1^c1c3'), (1, [Point(0, 2), Point(2, 2), Point(2, 0)]))
+        self.assertEqual(qchess.command_to_move_points('a1c1^a3'), (2, [Point(0, 2), Point(2, 2), Point(0, 0)]))
+        self.assertEqual(qchess.command_to_move_points('ggggggggg'), (None, None))
+        self.assertEqual(qchess.command_to_move_points('a1^f1g3'), (None, None))
+        self.assertEqual(qchess.command_to_move_points('a3a9^b1'), (None, None))
+
     def test_is_move_valid(self):
         #Board is 5x5 always
         #Every piece is always in the center
@@ -197,11 +216,11 @@ class TestPiece(unittest.TestCase):
             self.assertEqual(int(pawn1.is_move_valid(source, target, qchess=qchess3)[0]), en_passant[j][i])
 
 class TestClassicalBoard(unittest.TestCase):
-    def test_classical_qboard(self):
-        #test squared qboard
+    def test_basic_board_operations(self):
+        #squared board
         qchess = QChess(3, 3)
         self.assertEqual(qchess.board[1][1], NullPiece)
-        qchess.board[0][2] = Piece(PieceType.KING, Color.BLACK)
+        qchess.add_piece(0, 2, Piece(PieceType.KING, Color.BLACK))
         self.assertNotEqual(qchess.board[0][2], NullPiece)
         
         with self.assertRaises(IndexError):
@@ -210,10 +229,10 @@ class TestClassicalBoard(unittest.TestCase):
             qchess.board[100][129]
             qchess.board[-1][-100]
 
-        #test rectangular board
+        #rectangular board
         qchess = QChess(5, 1)
         self.assertEqual(qchess.board[4][0], NullPiece)
-        qchess.board[3][0] = Piece(PieceType.KING, Color.BLACK)
+        qchess.add_piece(3, 0, Piece(PieceType.KING, Color.BLACK))
         self.assertNotEqual(qchess.board[3][0], NullPiece)
         
         with self.assertRaises(IndexError):

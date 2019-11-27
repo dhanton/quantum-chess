@@ -45,6 +45,12 @@ class QChess:
 
         self.ended = False
 
+        self.move_types = [
+            {'name': 'Standard', 'move_number': 2, 'func': QChess.standard_move},
+            {'name': 'Split', 'move_number': 3, 'func': QChess.split_move},
+            {'name': 'Merge', 'move_number': 3, 'func': QChess.merge_move}
+        ]
+
         if game_mode:
             #populate board
             for j, row in enumerate(game_mode['board']):
@@ -52,12 +58,6 @@ class QChess:
                     if notation == '0': continue
 
                     self.add_piece(i, j, Piece.from_notation(notation))
-
-    def perform_after_move(self):
-        if self.just_moved_ep:
-            self.just_moved_ep = False
-        else:
-            self.ep_pawn_point = None
 
     def is_game_over(qchess):
         black_king_count = 0
@@ -160,6 +160,99 @@ class QChess:
         
         return pieces
 
+    #a1 to Point(0, 0)
+    def string_to_point(self, string):
+        #check correct length of 2
+        if len(string) != 2:
+            return None
+
+        #check first character is a lowercase letter
+        if ord(string[0]) < 97 or ord(string[0]) > 122:
+            return None
+
+        #check second character is a number
+        if ord(string[1]) < 49 or ord(string[1]) > 57:
+            return None
+
+        result = Point(ord(string[0]) - 97, self.height - int(string[1]))
+
+        if not self.in_bounds(result.x, result.y):
+            return None 
+
+        return result
+
+    #a2b3, a2^b3b4, etc to a set of (source, target) or (source1, target1, target2), etc
+    #if check_current_turn is set to True, an error will occur if the turn 
+    def command_to_move_points(self, command, check_current_turn=False):
+        move_points = None
+        move_index = None
+
+        if len(command) == 4:
+            #standard move
+            source = self.string_to_point(command[0:2])
+            target = self.string_to_point(command[2:4])
+
+            if source and target:
+                if (
+                    check_current_turn and
+                    self.board[source.x][source.y].color != self.current_turn
+                ):
+                    print("It's " + self.current_turn.name.lower() + "'s turn to move.")
+                    return move_index, None
+
+                move_points = [source, target]
+                move_index = 0
+
+        elif len(command) == 7:
+            if command[2] == '^':
+                #split move
+                source = self.string_to_point(command[0:2])
+                target1 = self.string_to_point(command[3:5])
+                target2 = self.string_to_point(command[5:7])
+
+                if source and target1 and target2:
+                    if (
+                        check_current_turn and
+                        self.board[source.x][source.y].color != self.current_turn
+                    ):
+                        print("It's " + self.current_turn.name.lower() + "'s turn to move.")
+                        return move_index, None
+
+                    move_points = [source, target1, target2]
+                    move_index = 1
+
+            elif command[4] == '^':
+                #merge move
+                source1 = self.string_to_point(command[0:2])
+                source2 = self.string_to_point(command[2:4])
+                target = self.string_to_point(command[5:7])
+
+                if source1 and source2 and target:
+                    if (
+                        check_current_turn and
+                        (self.board[source1.x][source1.y].color != self.current_turn or
+                        self.board[source2.x][source2.y].color != self.current_turn)
+                    ):
+                        print("It's " + self.current_turn.name.lower() + "'s turn to move.")
+                        return move_index, None
+
+                    move_points = [source1, source2, target]
+                    move_index = 2
+            
+        return move_index, move_points
+
+    def perform_command_move(self, command):
+        success = False
+
+        move_index, move_points = self.command_to_move_points(command, check_current_turn=True)
+
+        if move_points:
+            success = self.move_types[move_index]['func'](self, *move_points)
+        else:
+            print('Invalid move.')
+
+        return success
+
     def ascii_render(self):
         s = ""
 
@@ -246,11 +339,6 @@ class QChess:
         return layout
 
     def create_window(self):
-        self.move_types = [
-            {'name': 'Standard', 'move_number': 2, 'func': QChess.standard_move},
-            {'name': 'Split', 'move_number': 3, 'func': QChess.split_move},
-            {'name': 'Merge', 'move_number': 3, 'func': QChess.merge_move}
-        ]
         self.current_move = 0
 
         #each turn will be filled with (source, target) or (source1, source2, target) etc
@@ -414,6 +502,35 @@ class QChess:
                             self.select_button(p.x, p.y, 'Purple')
 
         self.window.close()
+
+    def ascii_main_loop(self):
+        #clear for unix based systems, cls for windows
+        clear_command = 'cls' if os.name == 'nt' else 'clear'
+
+        os.system(clear_command)
+        print('\n')
+        self.ascii_render()
+
+        while True:
+            command = input('')
+
+            os.system(clear_command)
+
+            success = self.perform_command_move(command)
+
+            print('')
+            #if move wasn't succesful then an error was printed
+            if success: 
+                #if it was succesful we print a blank line to keep
+                #the board in the same position
+                print('')
+
+                self.current_turn = Color.opposite(self.current_turn)
+
+            self.ascii_render()
+
+            if self.is_game_over():
+                break
 
     def get_simplified_matrix(self):
         m = []
