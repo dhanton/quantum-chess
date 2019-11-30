@@ -16,6 +16,7 @@ class QiskitEngine(BaseEngine):
         self.width = width
         self.height = height
 
+        NullPiece.qflag = 0
         self.qflag_index = 0
 
         #board main quantum register
@@ -157,14 +158,10 @@ class QiskitEngine(BaseEngine):
         self.collapse_by_flag(None, collapse_all=True)
 
     """
-        This function will atempt (with only access to classical info)
-        to tell if a slide move could violate the double occupancy
-        rule.
-
-        This function is called after qutils.perform_slide_capture
-        only if true was returned. So the path is clear in at least
-        one of the superpositions, or the path is blocked but target
-        is empty.
+        The idea of this function is to calculate all posible permutations
+        of the pieces entangled with target to see if, in any of the combinations,
+        target is not empty and the path is blocked at the same time. This
+        would violate double occupancy so a measurement has to be performed.
     """
     def does_slide_violate_double_occupancy(self, source, target):
         target_piece = self.classical_board[target.x][target.y]
@@ -239,8 +236,8 @@ class QiskitEngine(BaseEngine):
             else:
                 qutils.perform_standard_jump(self, source, target)
 
-            self.classical_board[source.x][source.y] = target_piece
-            self.classical_board[target.x][target.y] = piece
+            self.classical_board[source.x][source.y] = target_piece.copy()
+            self.classical_board[target.x][target.y] = piece.copy()
         else:
             if target_piece.color == piece.color:
                 self.collapse_by_flag(target_piece.qflag)
@@ -261,8 +258,8 @@ class QiskitEngine(BaseEngine):
                     else:
                         qutils.perform_standard_jump(self, source, target)
 
-                    self.classical_board[source.x][source.y] = new_source_piece
-                    self.classical_board[target.x][target.y] = piece
+                    self.classical_board[source.x][source.y] = new_source_piece.copy()
+                    self.classical_board[target.x][target.y] = piece.copy()
             else:
                 self.collapse_by_flag(piece.qflag)
 
@@ -279,22 +276,22 @@ class QiskitEngine(BaseEngine):
                                 path_clear = self.collapse_path(source, target, collapse_source=True)
 
                                 if path_clear and self.classical_board[source.x][source.y] == NullPiece:
-                                    self.classical_board[target.x][target.y] = piece
+                                    self.classical_board[target.x][target.y] = piece.copy()
                             else:
                                 if not self.entangle_path_flags(piece.qflag, source, target):
                                     self.classical_board[source.x][source.y] = NullPiece
                                     
-                                self.classical_board[target.x][target.y] = piece
+                                self.classical_board[target.x][target.y] = piece.copy()
                         else:
                             path_clear = self.collapse_path(source, target, collapse_source=True)
 
                             if path_clear and self.classical_board[source.x][source.y] == NullPiece:
-                                self.classical_board[target.x][target.y] = piece
+                                self.classical_board[target.x][target.y] = piece.copy()
                     else:
                         qutils.perform_capture_jump(self, source, target)
 
                         self.classical_board[source.x][source.y] = NullPiece
-                        self.classical_board[target.x][target.y] = piece
+                        self.classical_board[target.x][target.y] = piece.copy()
 
     def _standard_pawn_move(self, source, target):
         pawn = self.classical_board[source.x][source.y]
@@ -325,7 +322,7 @@ class QiskitEngine(BaseEngine):
 
                     qutils.perform_standard_slide(self, source, target)
 
-                self.classical_board[target.x][target.y] = pawn
+                self.classical_board[target.x][target.y] = pawn.copy()
 
         elif move_type == Pawn.MoveType.CAPTURE:
             #pawn is the only piece that needs to collapse target when capturing
@@ -339,7 +336,7 @@ class QiskitEngine(BaseEngine):
                 qutils.perform_capture_jump(self, source, target)
 
                 self.classical_board[source.x][source.y] = NullPiece
-                self.classical_board[target.x][target.y] = pawn
+                self.classical_board[target.x][target.y] = pawn.copy()
 
         elif move_type == Pawn.MoveType.EN_PASSANT:
             if target_piece == NullPiece:
@@ -356,7 +353,7 @@ class QiskitEngine(BaseEngine):
                     qutils.perform_standard_en_passant(self, source, target, ep_point)
                     
                     self.classical_board[source.x][source.y] = NullPiece
-                    self.classical_board[target.x][target.y] = pawn
+                    self.classical_board[target.x][target.y] = pawn.copy()
                     self.classical_board[ep_point.x][ep_point.y] = NullPiece
             else:
                 self.collapse_by_flag(pawn.qflag)
@@ -365,7 +362,7 @@ class QiskitEngine(BaseEngine):
                     qutils.perform_capture_en_passant(self, source, target, ep_point)
 
                     self.classical_board[source.x][source.y] = NullPiece
-                    self.classical_board[target.x][target.y] = pawn
+                    self.classical_board[target.x][target.y] = pawn.copy()
                     self.classical_board[ep_point.x][ep_point.y] = NullPiece
 
     def split_move(self, source, target1, target2):
@@ -394,13 +391,13 @@ class QiskitEngine(BaseEngine):
         self.entangle_flags(piece.qflag, target_piece2.qflag)
 
         if target_piece1 == NullPiece:
-            self.classical_board[target1.x][target1.y] = piece
+            self.classical_board[target1.x][target1.y] = piece.copy()
 
         if target_piece2 == NullPiece:
-            self.classical_board[target2.x][target2.y] = piece
+            self.classical_board[target2.x][target2.y] = piece.copy()
 
         if target_piece1 == NullPiece and target_piece2 == NullPiece:
-            self.classical_board[source.x][source.y] = new_source_piece
+            self.classical_board[source.x][source.y] = new_source_piece.copy()
     
     def merge_move(self, source1, source2, target):
         piece1 = self.classical_board[source1.x][source1.y]
@@ -429,8 +426,8 @@ class QiskitEngine(BaseEngine):
         self.entangle_flags(piece1.qflag, piece2.qflag)
         self.entangle_flags(piece1.qflag, target_piece.qflag)
 
-        self.classical_board[target.x][target.y] = piece1
+        self.classical_board[target.x][target.y] = piece1.copy()
 
         if target_piece == NullPiece:
-            self.classical_board[source1.x][source1.y] = new_source1_piece
-            self.classical_board[source2.x][source2.y] = new_source2_piece
+            self.classical_board[source1.x][source1.y] = new_source1_piece.copy()
+            self.classical_board[source2.x][source2.y] = new_source2_piece.copy()

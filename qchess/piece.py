@@ -1,6 +1,8 @@
 from enum import IntEnum
 from .point import Point
 
+import copy
+
 class PieceType(IntEnum):
     NONE = -1,
     PAWN = 0,
@@ -31,6 +33,14 @@ class Piece:
 
     def __str__(self):
         return self.color.name + ' ' + self.type.name
+
+    def copy(self):
+        #no need to copy NullPiece
+        if self == NullPiece:
+            return NullPiece
+
+        #just in case new variables are added in other places
+        return copy.copy(self)
 
     def as_notation(self):
         result = ''
@@ -116,4 +126,3 @@ class Piece:
         
 
 NullPiece = Piece(PieceType.NONE, Color.NONE)
-NullPiece.qflag = 0

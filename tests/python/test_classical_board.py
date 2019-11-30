@@ -73,6 +73,24 @@ class TestPiece(unittest.TestCase):
         self.assertEqual(qchess.command_to_move_points('a1^f1g3'), (None, None))
         self.assertEqual(qchess.command_to_move_points('a3a9^b1'), (None, None))
 
+    def test_copy(self):
+        piece = Piece(PieceType.KING, Color.BLACK)
+        new_piece = piece.copy()
+
+        #check the piece is equal (same type, same color)
+        self.assertEqual(piece, new_piece)
+
+        #check the instance is different
+        self.assertNotEqual(id(piece), id(new_piece))
+
+        piece = NullPiece
+        new_piece = piece.copy()
+
+        self.assertEqual(piece, new_piece)
+
+        #in the case of a NullPiece, no new instance is created
+        self.assertEqual(id(piece), id(new_piece))
+
     def test_is_move_valid(self):
         #Board is 5x5 always
         #Every piece is always in the center
