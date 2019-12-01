@@ -12,6 +12,7 @@ class QChess:
         #default values
         self.current_turn = Color.WHITE
         self.pawn_double_step_allowed = True
+        self.pawn_promotion_allowed = True
 
         if game_mode:
             assert('board' in game_mode)
@@ -21,9 +22,13 @@ class QChess:
                 if game_mode['starting_color'] == 'Black':
                     self.current_turn = Color.BLACK
 
-            #some modes with smaller boards may disable pawn's double step
+            #some modes with smaller boards may disable pawn double step
             if 'pawn_double_step_allowed' in game_mode:
                 self.pawn_double_step_allowed = game_mode['pawn_double_step_allowed']
+
+            #some modes may disable promotion for balance reasons
+            if 'pawn_promotion_allowed' in game_mode:
+                self.pawn_promotion_allowed = game_mode['pawn_promotion_allowed']
 
             height = len(game_mode['board'])
             assert(height > 0)
@@ -121,9 +126,6 @@ class QChess:
         if self.is_occupied(x, y):
             print("add piece error - there is already a piece in that position")
             return
-
-        if piece.type == PieceType.PAWN and not self.pawn_double_step_allowed:
-            piece.double_step_allowed = False
 
         self.board[x][y] = piece
 
@@ -583,19 +585,48 @@ class QChess:
                     print('Invalid move - Incorrect move for piece type pawn')
                     return False
 
+                elif move_type == Pawn.MoveType.SINGLE_STEP or move_type == Pawn.MoveType.DOUBLE_STEP:
+                    if target_piece != NullPiece and target_piece.collapsed:
+                        print('Invalid move - Target square is blocked by a collapsed piece')
+                        return False
+
+                    if (
+                        move_type == Pawn.MoveType.DOUBLE_STEP and 
+                        self.is_path_collapsed_blocking(source, target)
+                    ):
+                        print('Invalid move - Path is blocked by a collapsed piece')
+                        return False
+
             elif not piece.is_move_valid(source, target):
                 print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
                 return False
 
         self.engine.standard_move(source, target, force=force)
 
-        #update pawn information if move was succesful
-        if piece.type == PieceType.PAWN and not piece.has_moved:
-            piece.has_moved = True
+        #perform pawn related checks if the pawn actually moved
+        if piece.type == PieceType.PAWN and self.board[target.x][target.y] == piece:
+            #if it's the first time the pawn moved
+            if not piece.has_moved:
+                piece.has_moved = True
 
-            if move_type == Pawn.MoveType.DOUBLE_STEP:
-                self.ep_pawn_point = target
-                self.just_moved_ep = True
+                #update en passant flag
+                if move_type == Pawn.MoveType.DOUBLE_STEP:
+                    self.ep_pawn_point = target
+                    self.just_moved_ep = True
+
+            #if the pawn has reached the end
+            if (
+                self.pawn_promotion_allowed and
+                ((piece.color == Color.WHITE and target.y == 0) or
+                (piece.color == Color.BLACK and target.y == self.height - 1))
+            ):
+                #for simplicity, only queen promotion is allowed
+                promoted_pawn = Piece(PieceType.QUEEN, piece.color)
+                promoted_pawn.collapsed = piece.collapsed
+
+                self.engine.on_pawn_promotion(promoted_pawn, piece)
+
+                self.board[target.x][target.y] = promoted_pawn
 
         return True
 

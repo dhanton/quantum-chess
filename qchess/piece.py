@@ -27,6 +27,7 @@ class Piece:
     def __init__(self, piece_type, color):
         self.type = piece_type
         self.color = color
+        self.collapsed = True
 
     def __eq__(self, other):
         return self.type == other.type and self.color == other.color

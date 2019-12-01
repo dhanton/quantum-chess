@@ -46,14 +46,15 @@ class QiskitEngine(BaseEngine):
 
     def on_add_piece(self, x, y, piece):
         piece.qflag = 1 << self.qflag_index
-        piece.collapsed = True
-
         self.qflag_index += 1
 
         #the value is already |0> (no piece)
         #since we want to add the piece with 100% probability, we swap to |1>
         q1 = self.get_qubit(x, y)
         self.qcircuit.x(q1)
+
+    def on_pawn_promotion(self, promoted_pawn, pawn):
+        promoted_pawn.qflag = pawn.qflag
 
     def get_qubit(self, x, y):
         return self.qregister[self.qchess.get_array_index(x, y)]
@@ -121,59 +122,57 @@ class QiskitEngine(BaseEngine):
                 self.qcircuit.measure(self.qregister[i], self.cregister[i])
                 collapsed_indices.append(i)
         
-        if not collapsed_indices:
-            return
+        if collapsed_indices:
+            job = execute(self.qcircuit, backend=qutils.backend, shots=1)
+            result = job.result()
 
-        job = execute(self.qcircuit, backend=qutils.backend, shots=1)
-        result = job.result()
+            bitstring = list(result.get_counts().keys())[0].split(' ')[1]
 
-        bitstring = list(result.get_counts().keys())[0].split(' ')[1]
+            if collapse_all:
+                self.qflag_index = 0
 
-        if collapse_all:
-            self.qflag_index = 0
+            for i, char in enumerate(bitstring[::-1]):
+                pos = self.qchess.get_board_point(i)
 
-        for i, char in enumerate(bitstring[::-1]):
-            pos = self.qchess.get_board_point(i)
+                if char == '0' and i in collapsed_indices:
+                    self.classical_board[pos.x][pos.y] = NullPiece
 
-            if char == '0' and i in collapsed_indices:
-                self.classical_board[pos.x][pos.y] = NullPiece
+                    #set to |0> in circuit
+                    self.qcircuit.reset(self.qregister[i])
 
-                #set to |0> in circuit
-                self.qcircuit.reset(self.qregister[i])
+                if char == '1' and i in collapsed_indices:
+                    #set to |1> in circuit
+                    self.qcircuit.reset(self.qregister[i])
+                    self.qcircuit.x(self.qregister[i])
 
-            if char == '1' and i in collapsed_indices:
-                #set to |1> in circuit
-                self.qcircuit.reset(self.qregister[i])
-                self.qcircuit.x(self.qregister[i])
+                    piece = self.qchess.get_piece(i)
+                    assert(piece != NullPiece)
+                    piece.collapsed = True
 
-                piece = self.qchess.get_piece(i)
-                assert(piece != NullPiece)
-                piece.collapsed = True
+                    #since we can't be 100% sure of the original qflag of a piece
+                    #we assign them at random from the qflag used to collapse
+                    #(note: binary qflag has as many '1's as the number of collapsed pieces)
 
-                #since we can't be 100% sure of the original qflag of a piece
-                #we assign them at random from the qflag used to collapse
-                #(note: binary qflag has as many '1's as the number of collapsed pieces)
+                    if not collapse_all:
+                        #find the position of the first '1' in binary qflag
+                        binary_qflag = bin(qflag)[2:]
+                        index = len(binary_qflag) - binary_qflag.find('1') - 1
 
-                if not collapse_all:
-                    #find the position of the first '1' in binary qflag
-                    binary_qflag = bin(qflag)[2:]
-                    index = len(binary_qflag) - binary_qflag.find('1') - 1
+                        #there should always be enough '1's for every collapsed piece
+                        assert(index < len(bin(qflag)))
 
-                    #there should always be enough '1's for every collapsed piece
-                    assert(index < len(bin(qflag)))
+                        #generate a new qflag with all '0's except a '1' in that position
+                        new_qflag = 1 << index
 
-                    #generate a new qflag with all '0's except a '1' in that position
-                    new_qflag = 1 << index
+                        #remove the '1' in that position from binary qflag
+                        qflag ^= new_qflag
+                    else:
+                        new_qflag = 1 << self.qflag_index
+                        self.qflag_index += 1
 
-                    #remove the '1' in that position from binary qflag
-                    qflag ^= new_qflag
-                else:
-                    new_qflag = 1 << self.qflag_index
-                    self.qflag_index += 1
-
-                #assign new original qflag
-                piece.qflag = new_qflag 
-                
+                    #assign new original qflag
+                    piece.qflag = new_qflag 
+                    
         all_collapsed = collapse_all
 
         if not all_collapsed:
@@ -184,6 +183,10 @@ class QiskitEngine(BaseEngine):
                     all_collapsed = False
                     break
 
+        #the circuit is reset when all pieces are collapsed, even if
+        #no new pieces were collapsed in this call
+        #when all the qubits are |0> or |1>, it's cheaper to just reset
+        #the circuit than to keep track of all the qubits operations
         if all_collapsed:
             self.generate_circuit()
 
