@@ -102,6 +102,7 @@ class QChess:
     def is_occupied(self, x, y):
         if self.board[x][y] != NullPiece:
             return True
+
         return False
 
     def get_array_index(self, x, y):
@@ -159,6 +160,13 @@ class QChess:
                 pieces.append(self.board[point.x][point.y])
         
         return pieces
+
+    def is_path_collapsed_blocking(self, source, target):
+        for piece in self.get_path_pieces(source, target):
+            if piece.collapsed:
+                return True
+
+        return False
 
     #a1 to Point(0, 0)
     def string_to_point(self, string):
@@ -557,6 +565,15 @@ class QChess:
             return False
 
         piece = self.board[source.x][source.y]
+        target_piece = self.board[target.x][target.y]
+
+        if piece.color == target_piece.color and target_piece.collapsed:
+            print('Invalid move - Target square is blocked by a collapsed piece')
+            return False
+
+        if piece.is_move_slide() and self.is_path_collapsed_blocking(source, target):
+            print('Invalid move - Path is blocked by a collapsed piece')
+            return False
 
         if not force:
             if piece.type == PieceType.PAWN:
@@ -624,6 +641,22 @@ class QChess:
             print("Invalid move - Target square is not empty")
             return False
 
+        if piece.is_move_slide():
+            path1_blocked = self.is_path_collapsed_blocking(source, target1)
+            path2_blocked = self.is_path_collapsed_blocking(source, target2)
+
+            if path1_blocked and path2_blocked:
+                print('Invalid move - Both paths are blocked by a collapsed piece')
+                return False
+            elif path1_blocked:
+                print('Warning - One of the paths is blocked by a collapsed piece')
+                print('Performing standard move in the other direction')
+                return self.standard_move(source, target2)
+            elif path2_blocked:
+                print('Warning - One of the paths is blocked by a collapsed piece')
+                print('Performing standard move in the other direction')
+                return self.standard_move(source, target1)            
+
         self.engine.split_move(source, target1, target2)
 
         return True
@@ -669,6 +702,22 @@ class QChess:
         if target_piece != NullPiece and target_piece != piece1:
             print('Invalid move - Target square is not empty')
             return False
+
+        if piece1.is_move_slide():
+            path1_blocked = self.is_path_collapsed_blocking(source1, target)
+            path2_blocked = self.is_path_collapsed_blocking(source2, target)
+
+            if path1_blocked and path2_blocked:
+                print('Invalid move - Both paths are blocked by a collapsed piece')
+                return False
+            elif path1_blocked:
+                print('Warning - One of the paths is blocked by a collapsed piece')
+                print('Performing standard move in the other direction')
+                return self.standard_move(source2, target)
+            elif path2_blocked:
+                print('Warning - One of the paths is blocked by a collapsed piece')
+                print('Performing standard move in the other direction')
+                return self.standard_move(source1, target) 
 
         self.engine.merge_move(source1, source2, target)
 

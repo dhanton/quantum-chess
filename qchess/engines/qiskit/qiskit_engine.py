@@ -19,8 +19,11 @@ class QiskitEngine(BaseEngine):
         NullPiece.qflag = 0
         self.qflag_index = 0
 
+        self.generate_circuit()
+
+    def generate_circuit(self):
         #board main quantum register
-        self.qregister = QuantumRegister(width * height)
+        self.qregister = QuantumRegister(self.width * self.height)
         
         #ancilla qubits used for some intermediate operations
         self.aregister = QuantumRegister(3)
@@ -29,15 +32,22 @@ class QiskitEngine(BaseEngine):
         self.mct_register = QuantumRegister(6)
         
         #classical bits to collapse each square individually
-        self.cregister = ClassicalRegister(width * height)
+        self.cregister = ClassicalRegister(self.width * self.height)
 
         #classical bit for other operations
         self.cbit_misc = ClassicalRegister(1)
 
         self.qcircuit = QuantumCircuit(self.qregister, self.aregister, self.mct_register, self.cregister, self.cbit_misc)
 
+        #populate the qubits if pieces already exist
+        for i in range(self.width * self.height):
+            if self.qchess.get_piece(i) != NullPiece:
+                self.qcircuit.x(self.qregister[i])
+
     def on_add_piece(self, x, y, piece):
         piece.qflag = 1 << self.qflag_index
+        piece.collapsed = True
+
         self.qflag_index += 1
 
         #the value is already |0> (no piece)
@@ -104,7 +114,7 @@ class QiskitEngine(BaseEngine):
             piece = self.qchess.get_piece(i)
 
             if (
-                # not self.is_piece_collapsed(i) and
+                not piece.collapsed and
                 piece != NullPiece and (collapse_all or piece.qflag & qflag != 0)
             ):
                 #measure the ith qubit to the ith bit
@@ -119,9 +129,13 @@ class QiskitEngine(BaseEngine):
 
         bitstring = list(result.get_counts().keys())[0].split(' ')[1]
 
+        if collapse_all:
+            self.qflag_index = 0
+
         for i, char in enumerate(bitstring[::-1]):
+            pos = self.qchess.get_board_point(i)
+
             if char == '0' and i in collapsed_indices:
-                pos = self.qchess.get_board_point(i)
                 self.classical_board[pos.x][pos.y] = NullPiece
 
                 #set to |0> in circuit
@@ -132,6 +146,51 @@ class QiskitEngine(BaseEngine):
                 self.qcircuit.reset(self.qregister[i])
                 self.qcircuit.x(self.qregister[i])
 
+                piece = self.qchess.get_piece(i)
+                assert(piece != NullPiece)
+                piece.collapsed = True
+
+                #since we can't be 100% sure of the original qflag of a piece
+                #we assign them at random from the qflag used to collapse
+                #(note: binary qflag has as many '1's as the number of collapsed pieces)
+
+                if not collapse_all:
+                    #find the position of the first '1' in binary qflag
+                    binary_qflag = bin(qflag)[2:]
+                    index = len(binary_qflag) - binary_qflag.find('1') - 1
+
+                    #there should always be enough '1's for every collapsed piece
+                    assert(index < len(bin(qflag)))
+
+                    #generate a new qflag with all '0's except a '1' in that position
+                    new_qflag = 1 << index
+
+                    #remove the '1' in that position from binary qflag
+                    qflag ^= new_qflag
+                else:
+                    new_qflag = 1 << self.qflag_index
+                    self.qflag_index += 1
+
+                #assign new original qflag
+                piece.qflag = new_qflag 
+                
+        all_collapsed = collapse_all
+
+        if not all_collapsed:
+            all_collapsed = True
+
+            for i in range(self.width * self.height):
+                if not self.qchess.get_piece(i).collapsed:
+                    all_collapsed = False
+                    break
+
+        if all_collapsed:
+            self.generate_circuit()
+
+    def set_piece_uncollapsed(self, point):
+        if self.classical_board[point.x][point.y] != NullPiece:
+            self.classical_board[point.x][point.y].collapsed = False
+
     def collapse_path(self, source, target, collapse_target=False, collapse_source=False):
         qflag = 0
 
@@ -140,10 +199,16 @@ class QiskitEngine(BaseEngine):
 
         source_piece = self.classical_board[source.x][source.y]
         if source_piece != NullPiece and collapse_source:
+            #force the piece to get collapsed
+            source_piece.collapsed = False
+
             qflag |= source_piece.qflag
 
         target_piece = self.classical_board[target.x][target.y]
         if target_piece != NullPiece and collapse_source:
+            #force the piece to get collapsed
+            target_piece.collapsed = False
+
             qflag |= target_piece.qflag
 
         self.collapse_by_flag(qflag)
@@ -224,13 +289,13 @@ class QiskitEngine(BaseEngine):
 
         if target_piece == NullPiece or target_piece == piece:
             if piece.is_move_slide():
-                if (
-                    self.entangle_path_flags(piece.qflag, source, target) and 
-                    target_piece == NullPiece
-                ):
+                if self.entangle_path_flags(piece.qflag, source, target):
+                    piece.collapsed = False
+
                     #if something may be blocking then the piece might stay in place
                     #so we don't want to remove it clasically
-                    target_piece = piece
+                    if target_piece == NullPiece:
+                        target_piece = piece
                 
                 qutils.perform_standard_slide(self, source, target)
             else:
@@ -252,6 +317,7 @@ class QiskitEngine(BaseEngine):
                         if self.entangle_path_flags(piece.qflag, source, target):
                             #if something may be blocking then the piece might stay in place
                             #so we don't want to remove it clasically
+                            piece.collapsed = False
                             new_source_piece = piece
                         
                         qutils.perform_standard_slide(self, source, target)
@@ -280,6 +346,8 @@ class QiskitEngine(BaseEngine):
                             else:
                                 if not self.entangle_path_flags(piece.qflag, source, target):
                                     self.classical_board[source.x][source.y] = NullPiece
+                                else:
+                                    piece.collapsed = False
                                     
                                 self.classical_board[target.x][target.y] = piece.copy()
                         else:
@@ -319,6 +387,8 @@ class QiskitEngine(BaseEngine):
                 else:
                     if not self.entangle_path_flags(pawn.qflag, source, target):
                         self.classical_board[source.x][source.y] = NullPiece
+                    else:
+                        pawn.collapsed = False
 
                     qutils.perform_standard_slide(self, source, target)
 
@@ -398,6 +468,10 @@ class QiskitEngine(BaseEngine):
 
         if target_piece1 == NullPiece and target_piece2 == NullPiece:
             self.classical_board[source.x][source.y] = new_source_piece.copy()
+
+        self.set_piece_uncollapsed(target1)
+        self.set_piece_uncollapsed(target2)
+        self.set_piece_uncollapsed(source)
     
     def merge_move(self, source1, source2, target):
         piece1 = self.classical_board[source1.x][source1.y]
@@ -413,9 +487,11 @@ class QiskitEngine(BaseEngine):
             #set source piece to null only if the path for that piece is not blocked,
             #since if it's blocked then the piece might not be able to slide through
             if self.entangle_path_flags(piece1.qflag, source1, target):
+                piece1.collapsed = False
                 new_source1_piece = piece1
 
             if self.entangle_path_flags(piece2.qflag, source2, target):
+                piece2.collapsed = False
                 new_source2_piece = piece2
 
         else:
@@ -431,3 +507,12 @@ class QiskitEngine(BaseEngine):
         if target_piece == NullPiece:
             self.classical_board[source1.x][source1.y] = new_source1_piece.copy()
             self.classical_board[source2.x][source2.y] = new_source2_piece.copy()
+
+        #unless both sources are collapsed and the target is empty, we can't
+        #be sure the target is collapsed
+        if target_piece == NullPiece and piece1.collapsed and piece2.collapsed:
+            self.classical_board[target.x][target.y].collapsed = True
+        else:        
+            self.set_piece_uncollapsed(source1)
+            self.set_piece_uncollapsed(source2)
+            self.set_piece_uncollapsed(target)

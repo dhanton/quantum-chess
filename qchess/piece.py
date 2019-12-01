@@ -126,3 +126,4 @@ class Piece:
         
 
 NullPiece = Piece(PieceType.NONE, Color.NONE)
+NullPiece.collapsed = True
