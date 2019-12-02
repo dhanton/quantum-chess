@@ -566,6 +566,10 @@ class QChess:
             print('Invalid move - Source square is empty')
             return False
 
+        if source == target:
+            print('Invalid move - Source and target are the same square')
+            return False
+
         piece = self.board[source.x][source.y]
         target_piece = self.board[target.x][target.y]
 
@@ -643,11 +647,26 @@ class QChess:
             print('Invalid move - Source square is empty')
             return False
 
+        if source == target1 or source == target2:
+            print('Invalid move - Source and target are the same square')
+            return False
+
         if target1 == target2:
             print("Invalid move - Both split targets are the same square")
             return False
 
         piece = self.board[source.x][source.y]
+
+        target_piece1 = self.board[target1.x][target1.y]
+        target_piece2 = self.board[target2.x][target2.y]
+
+        if target_piece1 != NullPiece and target_piece1 != piece:
+            print("Invalid move - Target square is not empty")
+            return False
+
+        if target_piece2 != NullPiece and target_piece2 != piece:
+            print("Invalid move - Target square is not empty")
+            return False
 
         if not force:
             if piece.type == PieceType.PAWN:
@@ -660,17 +679,6 @@ class QChess:
             ):
                 print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
                 return False
-
-        target_piece1 = self.board[target1.x][target1.y]
-        target_piece2 = self.board[target2.x][target2.y]
-
-        if target_piece1 != NullPiece and target_piece1 != piece:
-            print("Invalid move - Target square is not empty")
-            return False
-
-        if target_piece2 != NullPiece and target_piece2 != piece:
-            print("Invalid move - Target square is not empty")
-            return False
 
         if piece.is_move_slide():
             path1_blocked = self.is_path_collapsed_blocking(source, target1)
@@ -705,12 +713,26 @@ class QChess:
             print('Invalid move - Target square not in bounds')
             return False
 
+        if source1 == target or source2 == target:
+            print('Invalid move - Source and target are the same square')
+            return False
+
         if source1 == source2:
             print('Invalid move - Both merge sources are the same squares')
             return False
         
         piece1 = self.board[source1.x][source1.y]
         piece2 = self.board[source2.x][source2.y]
+
+        if piece1 != piece2:
+            print('Invalid move - Different type of merge source pieces')
+            return False
+
+        target_piece = self.board[target.x][target.y]
+
+        if target_piece != NullPiece and target_piece != piece1:
+            print('Invalid move - Target square is not empty')
+            return False
 
         if not force:
             if piece1.type == PieceType.PAWN or piece2.type == PieceType.PAWN:
@@ -723,16 +745,6 @@ class QChess:
             ):
                 print('Invalid move - Incorrect move for piece type ' + piece1.type.name.lower())
                 return False
-
-        if piece1 != piece2:
-            print('Invalid move - Different type of merge source pieces')
-            return False
-
-        target_piece = self.board[target.x][target.y]
-
-        if target_piece != NullPiece and target_piece != piece1:
-            print('Invalid move - Target square is not empty')
-            return False
 
         if piece1.is_move_slide():
             path1_blocked = self.is_path_collapsed_blocking(source1, target)
