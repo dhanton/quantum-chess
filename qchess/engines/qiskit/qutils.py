@@ -153,8 +153,8 @@ def perform_capture_slide(engine, source, target):
     engine.qcircuit.unitary(iSwap_controlled, [qtarget, captured_piece, path_ancilla]).c_if(engine.cbit_misc, 1)
     engine.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, path_ancilla]).c_if(engine.cbit_misc, 1)
 
-    for point in engine.qchess.get_path_points(source, target):
-        engine.qcircuit.x(engine.get_qubit(point.x, point.y))
+    for qubit in control_qubits:
+        engine.qcircuit.x(qubit)
 
     result = execute(engine.qcircuit, backend=backend, shots=1).result()
 
@@ -304,3 +304,36 @@ def perform_capture_en_passant(engine, source, target, ep_target):
     engine.qcircuit.unitary(iSwap_controlled, [qep_target, captured_ancilla1, any_piece_ancilla])
     engine.qcircuit.unitary(iSwap_controlled, [qtarget, captured_ancilla2, any_piece_ancilla])
     engine.qcircuit.unitary(iSwap_controlled, [qsource, qtarget, any_piece_ancilla])
+
+#path holds all points that must be empty for the move to be valid (excluding targets)
+def perform_castle(engine, king_source, rook_source, king_target, rook_target, path=None):
+    qking_source = engine.get_qubit(king_source.x, king_source.y)
+    qrook_source = engine.get_qubit(rook_source.x, rook_source.y)
+    qking_target = engine.get_qubit(king_target.x, king_target.y)
+    qrook_target = engine.get_qubit(rook_target.x, rook_target.y)
+
+    if path:
+        #holds all the qubits of the path
+        control_qubits = []
+        for point in path:
+            control_qubits.append(engine.get_qubit(point.x, point.y))
+            engine.qcircuit.x(engine.get_qubit(point.x, point.y))
+
+        #holds if the path is empty or not
+        path_ancilla = engine.aregister[0]
+        engine.qcircuit.reset(path_ancilla)
+        engine.qcircuit.x(path_ancilla)
+
+        engine.qcircuit.mct(control_qubits, path_ancilla, engine.mct_register, mode='advanced')
+
+        #undo the x
+        for qubit in control_qubits:
+            engine.qcircuit.x(qubit)
+
+        #perform the movement
+        engine.qcircuit.unitary(iSwap_controlled, [qking_source, qking_target, path_ancilla])
+        engine.qcircuit.unitary(iSwap_controlled, [qrook_source, qrook_target, path_ancilla])
+    else:
+        #perform the movement
+        engine.qcircuit.unitary(iSwap, [qking_source, qking_target])
+        engine.qcircuit.unitary(iSwap, [qrook_source, qrook_target])

@@ -8,5 +8,35 @@
         ["0", "0", "0", "0", "0", "0", "0", "0"],
         ["P", "P", "P", "P", "P", "P", "P", "P"],
         ["R", "N", "B", "Q", "K", "B", "N", "R"]
+    ],
+
+    "castling_types": [
+        {
+            "rook_start_square": "h1",
+            "rook_end_square": "f1",
+            "king_start_square": "e1",
+            "king_end_square": "g1"
+        },
+
+        {
+            "rook_start_square": "a1",
+            "rook_end_square": "d1",
+            "king_start_square": "e1",
+            "king_end_square": "c1"
+        },
+
+        {
+            "rook_start_square": "h8",
+            "rook_end_square": "f8",
+            "king_start_square": "e8",
+            "king_end_square": "g8"
+        },
+
+        {
+            "rook_start_square": "a8",
+            "rook_end_square": "d8",
+            "king_start_square": "e8",
+            "king_end_square": "c8"
+        }
     ]
 }

@@ -53,6 +53,17 @@ class BaseEngine(ABC):
     def merge_move(self, source1, source2, target):
         raise NotImplementedError()
 
+    
+    """
+    Implements the castling operation internally.
+    Castling is not considered a standard move since it's more complex.
+
+    Required by QChess.
+    """
+    @abstractmethod
+    def castling_move(self, king_source, rook_source, king_target, rook_target):
+        raise NotImplementedError()
+
     """
     Collapse all pieces entangled with a the piece on (x, y)
 

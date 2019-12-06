@@ -332,7 +332,7 @@ class TestClassicalBoard(unittest.TestCase):
         
         self.assertEqual(qchess.get_simplified_matrix(), result)
 
-    def test_path_points(self):
+    def test_get_path_points(self):
         diagonal = [Point(1, 1), Point(2, 2), Point(3, 3)]
         diagonal_inv = [Point(3, 3), Point(2, 2), Point(1, 1)]
         row = [Point(1, 0), Point(2, 0), Point(3, 0)]
@@ -347,3 +347,6 @@ class TestClassicalBoard(unittest.TestCase):
         self.assertEqual(qchess.get_path_points(Point(4, 4), Point(0, 0)), diagonal_inv)
         self.assertEqual(qchess.get_path_points(Point(0, 4), Point(0, 0)), col_inv)
         self.assertEqual(qchess.get_path_points(Point(4, 0), Point(0, 0)), row_inv)
+
+        diagonal_different_sign = [Point(2, 1), Point(1, 2)]
+        self.assertEqual(qchess.get_path_points(Point(3, 0), Point(0, 3)), diagonal_different_sign)

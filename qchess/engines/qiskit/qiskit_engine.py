@@ -333,7 +333,10 @@ class QiskitEngine(BaseEngine):
                 self.collapse_by_flag(piece.qflag)
 
                 if self.classical_board[source.x][source.y] != NullPiece:
-                    if piece.is_move_slide():
+                    path_empty = self.qchess.is_path_empty(source, target)
+
+                    #if the path is empty the move is just a jump
+                    if piece.is_move_slide() and not path_empty:
                         """
                             Afer qutils.perform_capture_slide the path is collapsed
                             already unless does_slide_violate_double_occupancy returns 0,
@@ -519,3 +522,60 @@ class QiskitEngine(BaseEngine):
             self.set_piece_uncollapsed(source1)
             self.set_piece_uncollapsed(source2)
             self.set_piece_uncollapsed(target)
+
+    def castling_move(self, king_source, rook_source, king_target, rook_target):
+        king = self.classical_board[king_source.x][king_source.y]
+        rook = self.classical_board[rook_source.x][rook_source.y]
+
+        king_target_piece = self.classical_board[king_target.x][king_target.y]
+        rook_target_piece = self.classical_board[rook_target.x][rook_target.y]
+
+        #collapse target pieces
+        self.collapse_by_flag(king_target_piece.qflag | rook_target_piece.qflag)
+
+        #if both targets are empty
+        if (
+            self.classical_board[king_target.x][king_target.y] == NullPiece and
+            self.classical_board[rook_target.x][rook_target.y] == NullPiece
+        ):
+            #the path doesn't neccesarily have to be the shortest straight path
+            #between king and rook
+            king_path = self.qchess.get_path_points(king_source, king_target)
+            rook_path = self.qchess.get_path_points(rook_source, rook_target)
+
+            # in general it's the unique combination of their paths
+            path = []
+            for point in king_path + rook_path:
+                if point == king_target or point == rook_target: continue
+
+                #we don't need to include empty squares
+                if self.classical_board[point.x][point.y] == NullPiece: continue
+
+                if not point in path:
+                    path.append(point)
+
+            #exclude king_target and rook_target just in case
+            if king_target in path: path.remove(king_target)
+            if rook_target in path: path.remove(rook_target)
+
+            #perform the quantum move        
+            qutils.perform_castle(self, king_source, rook_source, king_target, rook_target, path)
+
+            if not path:
+                #remove from source only if path is empty
+                self.classical_board[king_source.x][king_source.y] = NullPiece
+                self.classical_board[rook_source.x][rook_source.y] = NullPiece
+            else:
+                #entangle with all the pieces in the path
+                path_qflags = 0
+                for point in path:
+                    path_qflags |= self.classical_board[point.x][point.y].qflag
+                
+                self.entangle_flags(king.qflag, rook.qflag)
+                self.entangle_flags(path_qflags, king.qflag)
+
+                king.collapsed = False
+                rook.collapsed = False
+
+            self.classical_board[king_target.x][king_target.y] = king.copy()
+            self.classical_board[rook_target.x][rook_target.y] = rook.copy()

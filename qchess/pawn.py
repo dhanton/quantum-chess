@@ -11,8 +11,6 @@ class Pawn(Piece):
 
     def __init__(self, color):
         super().__init__(PieceType.PAWN, color)
-        
-        self.has_moved = False
 
     #we need to access the quantum chess to check type of piece
     #since capture and move have diferent validations

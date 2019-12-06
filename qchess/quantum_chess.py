@@ -46,7 +46,10 @@ class QChess:
         #holds the position of the captureable en passant pawn
         #none if the last move wasn't a pawn's double step
         self.ep_pawn_point = None
-        self.just_moved_ep = False
+
+        #holds all the information regarding castling
+        #empty if castling is not allowed
+        self.castling_types = []
 
         self.ended = False
 
@@ -56,6 +59,7 @@ class QChess:
             {'name': 'Merge', 'move_number': 3, 'func': QChess.merge_move}
         ]
 
+        #these have to be done at the end of the constructor
         if game_mode:
             #populate board
             for j, row in enumerate(game_mode['board']):
@@ -63,6 +67,26 @@ class QChess:
                     if notation == '0': continue
 
                     self.add_piece(i, j, Piece.from_notation(notation))
+
+            #holds the information required to perform castling
+            #note that game modes are not limited to only 2 castling options (like in standard chess)
+            if 'castling_types' in game_mode:
+                for json_type in game_mode['castling_types']:
+                    castling_type = {}
+
+                    #if any element is missing an exception will be raised automatically
+                    required_keys = ['rook_start_square', 'rook_end_square', 'king_start_square', 'king_end_square']
+
+                    for key in required_keys:
+                        point = self.string_to_point(json_type[key])
+
+                        #if the point is not correctly parsed an exception will be raised
+                        if not point:
+                            raise ValueError("Invalid castling_types point {{'{}': '{}'}}".format(key, json_type[key]))
+
+                        castling_type[key] = point
+
+                    self.castling_types.append(castling_type)
 
     def is_game_over(qchess):
         black_king_count = 0
@@ -134,13 +158,13 @@ class QChess:
     def get_path_points(self, source, target):
         #not including source or target
         path = []
-        
+
         if not self.in_bounds(source.x, source.y): return path 
         if not self.in_bounds(target.x, target.y): return path
         if source == target: return path
 
         vec = target - source
-        if vec.x != 0 and vec.y != 0 and vec.x != vec.y: return path
+        if vec.x != 0 and vec.y != 0 and abs(vec.x) != abs(vec.y): return path
 
         x_iter = y_iter = 0
 
@@ -163,12 +187,19 @@ class QChess:
         
         return pieces
 
-    def is_path_collapsed_blocking(self, source, target):
+    def is_path_collapsed_blocked(self, source, target):
         for piece in self.get_path_pieces(source, target):
             if piece.collapsed:
                 return True
 
         return False
+
+    def is_path_empty(self, source, target):
+        for piece in self.get_path_pieces(source, target):
+            if piece != NullPiece:
+                return False
+
+        return True
 
     #a1 to Point(0, 0)
     def string_to_point(self, string):
@@ -573,15 +604,44 @@ class QChess:
         piece = self.board[source.x][source.y]
         target_piece = self.board[target.x][target.y]
 
-        if piece.color == target_piece.color and target_piece.collapsed:
-            print('Invalid move - Target square is blocked by a collapsed piece')
-            return False
-
-        if piece.is_move_slide() and self.is_path_collapsed_blocking(source, target):
-            print('Invalid move - Path is blocked by a collapsed piece')
-            return False
+        castling = False
 
         if not force:
+            #check if castling is valid
+            if piece.type == PieceType.KING and not piece.has_moved:
+                castling_type = None
+
+                for _castling_type in self.castling_types:
+                    if _castling_type['king_end_square'] == target:
+                        castling_type = _castling_type
+                        break
+                
+                #if the target is a valid castling position
+                if castling_type and castling_type['king_start_square'] == source:
+                    rook_source = castling_type['rook_start_square']
+                    rook = self.board[rook_source.x][rook_source.y]
+
+                    if rook.type != PieceType.ROOK or rook.color != piece.color:
+                        print('Invalid move - Rook must be in its initial position to castle')
+                        return False
+
+                    if rook.has_moved:
+                        print('Invalid move - Rook has already moved')
+                        return False
+
+                    rook_target = castling_type['rook_end_square']
+                    rook_target_piece = self.board[rook_target.x][rook_target.y]
+
+                    if rook_target_piece != NullPiece and rook_target_piece.collapsed:
+                        print('Invalid move - Rook target square is blocked by a collapsed piece')
+                        return False
+
+                    if self.is_path_collapsed_blocked(rook_source, source):
+                        print('Invalid move - Castling path is blocked by a collapsed piece')
+                        return False
+
+                    castling = True
+
             if piece.type == PieceType.PAWN:
                 move_type, ep_point = piece.is_move_valid(source, target, qchess=self)
                 
@@ -596,30 +656,48 @@ class QChess:
 
                     if (
                         move_type == Pawn.MoveType.DOUBLE_STEP and 
-                        self.is_path_collapsed_blocking(source, target)
+                        self.is_path_collapsed_blocked(source, target)
                     ):
                         print('Invalid move - Path is blocked by a collapsed piece')
                         return False
 
-            elif not piece.is_move_valid(source, target):
+            elif not castling and not piece.is_move_valid(source, target):
                 print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
                 return False
 
-        self.engine.standard_move(source, target, force=force)
+        if piece.color == target_piece.color and target_piece.collapsed:
+            print('Invalid move - Target square is blocked by a collapsed piece')
+            return False
 
-        #perform pawn related checks if the pawn actually moved
-        if piece.type == PieceType.PAWN and self.board[target.x][target.y] == piece:
-            #if it's the first time the pawn moved
+        if piece.is_move_slide() and self.is_path_collapsed_blocked(source, target):
+            print('Invalid move - Path is blocked by a collapsed piece')
+            return False
+
+        if castling:
+            #if castling is true all this variables are defined
+            self.engine.castling_move(source, rook_source, target, rook_target)
+        else:
+            self.engine.standard_move(source, target, force=force)
+
+        #update some variables after the move is done
+        if self.board[target.x][target.y] == piece:
+            #update en passant flag
+            if (
+                not piece.has_moved and
+                piece.type == PieceType.PAWN and 
+                move_type == Pawn.MoveType.DOUBLE_STEP
+            ):
+                self.ep_pawn_point = target
+            else:
+                self.ep_pawn_point = None
+                
+            #this is updated for pieces of all types
             if not piece.has_moved:
                 piece.has_moved = True
 
-                #update en passant flag
-                if move_type == Pawn.MoveType.DOUBLE_STEP:
-                    self.ep_pawn_point = target
-                    self.just_moved_ep = True
-
             #if the pawn has reached the end
             if (
+                piece.type == PieceType.PAWN and
                 self.pawn_promotion_allowed and
                 ((piece.color == Color.WHITE and target.y == 0) or
                 (piece.color == Color.BLACK and target.y == self.height - 1))
@@ -651,22 +729,10 @@ class QChess:
             print('Invalid move - Source and target are the same square')
             return False
 
-        if target1 == target2:
-            print("Invalid move - Both split targets are the same square")
-            return False
-
         piece = self.board[source.x][source.y]
 
         target_piece1 = self.board[target1.x][target1.y]
         target_piece2 = self.board[target2.x][target2.y]
-
-        if target_piece1 != NullPiece and target_piece1 != piece:
-            print("Invalid move - Target square is not empty")
-            return False
-
-        if target_piece2 != NullPiece and target_piece2 != piece:
-            print("Invalid move - Target square is not empty")
-            return False
 
         if not force:
             if piece.type == PieceType.PAWN:
@@ -680,9 +746,21 @@ class QChess:
                 print('Invalid move - Incorrect move for piece type ' + piece.type.name.lower())
                 return False
 
+        if target1 == target2:
+            print("Invalid move - Both split targets are the same square")
+            return False
+
+        if target_piece1 != NullPiece and target_piece1 != piece:
+            print("Invalid move - Target square is not empty")
+            return False
+
+        if target_piece2 != NullPiece and target_piece2 != piece:
+            print("Invalid move - Target square is not empty")
+            return False
+
         if piece.is_move_slide():
-            path1_blocked = self.is_path_collapsed_blocking(source, target1)
-            path2_blocked = self.is_path_collapsed_blocking(source, target2)
+            path1_blocked = self.is_path_collapsed_blocked(source, target1)
+            path2_blocked = self.is_path_collapsed_blocked(source, target2)
 
             if path1_blocked and path2_blocked:
                 print('Invalid move - Both paths are blocked by a collapsed piece')
@@ -716,10 +794,6 @@ class QChess:
         if source1 == target or source2 == target:
             print('Invalid move - Source and target are the same square')
             return False
-
-        if source1 == source2:
-            print('Invalid move - Both merge sources are the same squares')
-            return False
         
         piece1 = self.board[source1.x][source1.y]
         piece2 = self.board[source2.x][source2.y]
@@ -729,10 +803,6 @@ class QChess:
             return False
 
         target_piece = self.board[target.x][target.y]
-
-        if target_piece != NullPiece and target_piece != piece1:
-            print('Invalid move - Target square is not empty')
-            return False
 
         if not force:
             if piece1.type == PieceType.PAWN or piece2.type == PieceType.PAWN:
@@ -746,9 +816,17 @@ class QChess:
                 print('Invalid move - Incorrect move for piece type ' + piece1.type.name.lower())
                 return False
 
+        if source1 == source2:
+            print('Invalid move - Both merge sources are the same squares')
+            return False
+
+        if target_piece != NullPiece and target_piece != piece1:
+            print('Invalid move - Target square is not empty')
+            return False
+
         if piece1.is_move_slide():
-            path1_blocked = self.is_path_collapsed_blocking(source1, target)
-            path2_blocked = self.is_path_collapsed_blocking(source2, target)
+            path1_blocked = self.is_path_collapsed_blocked(source1, target)
+            path2_blocked = self.is_path_collapsed_blocked(source2, target)
 
             if path1_blocked and path2_blocked:
                 print('Invalid move - Both paths are blocked by a collapsed piece')

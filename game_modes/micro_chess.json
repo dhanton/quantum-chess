@@ -7,5 +7,21 @@
         ["R", "B", "N", "K"]
     ],
 
-    "pawn_double_step_allowed": false
+    "pawn_double_step_allowed": false,
+
+    "castling_types": [
+        {
+            "rook_start_square": "a1",
+            "rook_end_square": "c1",
+            "king_start_square": "d1",
+            "king_end_square": "b1"
+        },
+
+        {
+            "rook_start_square": "d5",
+            "rook_end_square": "b5",
+            "king_start_square": "a5",
+            "king_end_square": "c5"
+        }
+    ]
 }
