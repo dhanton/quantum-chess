@@ -1,5 +1,8 @@
 import unittest
 
+#import shots and delta default values
+from . import *
+
 from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
@@ -32,8 +35,8 @@ class TestSlideStandardMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(0, 0), Point(2, 2)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_blocked_move(self):
         engine = QuantumTestEngine()
@@ -62,8 +65,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(0, 0), Point(2, 2)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_nonclear_path_same_piece_move(self):
         engine = QuantumTestEngine()
@@ -116,8 +119,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_nonclear_path_split_then_capture(self):
         engine = QuantumTestEngine()
@@ -157,8 +160,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(0, 0), Point(2, 2)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_nonclear_path_collapse(self):
         engine = QuantumTestEngine()
@@ -202,8 +205,8 @@ class TestSlideStandardMove(unittest.TestCase):
 
         engine.set_board_factory(4, 4, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(0, 3), Point(3, 3)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_bell_state_entangle(self):
         engine = QuantumTestEngine()
@@ -229,8 +232,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_bell_state(self):
         engine = QuantumTestEngine()
@@ -266,8 +269,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_one_piece_triple_split_capture_entangle(self):
         engine = QuantumTestEngine()
@@ -292,8 +295,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(4, 4, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(3, 3), Point(0, 0)))
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_one_piece_triple_split_capture(self):
         engine = QuantumTestEngine()
@@ -341,8 +344,8 @@ class TestSlideStandardMove(unittest.TestCase):
             
         engine.set_board_factory(4, 4, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_two_piece_triple_split_capture(self):
         engine = QuantumTestEngine()
@@ -386,5 +389,5 @@ class TestSlideStandardMove(unittest.TestCase):
 
         engine.set_board_factory(4, 4, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(3, 3), Point(0, 0)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)

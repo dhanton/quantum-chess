@@ -1,5 +1,8 @@
 import unittest
 
+#import shots and delta default values
+from . import *
+
 from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
@@ -25,8 +28,8 @@ class TestPawnMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_capture_split_piece(self):
         engine = QuantumTestEngine()
@@ -57,8 +60,8 @@ class TestPawnMove(unittest.TestCase):
         
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(0, 0), Point(1, 1)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_en_passant(self):
         engine = QuantumTestEngine()
@@ -82,8 +85,8 @@ class TestPawnMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_capture_en_passant(self):
         engine = QuantumTestEngine()
@@ -118,8 +121,8 @@ class TestPawnMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_blocked_en_passant(self):
         engine = QuantumTestEngine()
@@ -153,5 +156,5 @@ class TestPawnMove(unittest.TestCase):
             
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)

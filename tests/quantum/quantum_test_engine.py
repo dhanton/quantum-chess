@@ -1,3 +1,6 @@
+#import shots and delta default values
+from . import *
+
 from qchess.quantum_chess import QChess
 
 class QuantumTestEngine():
@@ -38,6 +41,14 @@ class QuantumTestEngine():
 
     def run_tests(self, test_case, places=None, delta=None):
         assert(self.done)
+
+        if display_probabilities:
+            print()
+
+            #we display the probabilites in another loop to be able
+            #to display all even if assert fails
+            for bstate in self.posible_bstates:
+                print('Obtained: {} Expected: {}'.format(round(bstate['count']/self.n, 2), bstate['prob']))
 
         for bstate in self.posible_bstates:
             test_case.assertAlmostEqual(bstate['count']/self.n, bstate['prob'], places=places, delta=delta)

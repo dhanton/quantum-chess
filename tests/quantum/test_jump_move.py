@@ -1,5 +1,8 @@
 import unittest
 
+#import shots and delta default values
+from . import *
+
 from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
@@ -17,8 +20,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, lambda board: board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE)))
         engine.set_action(lambda board: board.split_move(Point(0, 0), Point(1, 0), Point(0, 1)))
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_merge_move(self):
         engine = QuantumTestEngine()
@@ -37,8 +40,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.merge_move(Point(0, 1), Point(1, 0), Point(1, 1)))
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
 
     def test_capture_move(self):
@@ -78,8 +81,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 1), Point(1, 2)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_blocked_move(self):
         engine = QuantumTestEngine()
@@ -118,8 +121,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(lambda board: board.standard_move(Point(1, 2), Point(1, 1)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_standard_move_to_split(self):
         engine = QuantumTestEngine()
@@ -152,8 +155,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_merge_of_piece_and_split(self):
         engine = QuantumTestEngine()
@@ -195,8 +198,8 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_split_to_piece(self):
         engine = QuantumTestEngine()
@@ -228,5 +231,5 @@ class TestJumpMove(unittest.TestCase):
 
         engine.set_board_factory(3, 3, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)

@@ -1,5 +1,8 @@
 import unittest
 
+#import shots and delta default values
+from . import *
+
 from qchess.quantum_chess import *
 from .quantum_test_engine import QuantumTestEngine
 
@@ -39,8 +42,8 @@ class TestCastling(unittest.TestCase):
 
         engine.set_board_factory(5, 2, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(4, 1), Point(2, 1)))
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     def test_straight_path_blocking_entangle(self):
         engine = QuantumTestEngine()
@@ -69,8 +72,8 @@ class TestCastling(unittest.TestCase):
 
         engine.set_board_factory(5, 2, board_factory)
         engine.set_action(lambda qchess: qchess.standard_move(Point(4, 1), Point(2, 1)))
-        engine.run_engine(100)
-        engine.run_tests(self)
+        engine.run_engine(entangle_shots)
+        engine.run_tests(self, delta=entangle_delta)
 
     def test_straight_path_blocking(self):
         engine = QuantumTestEngine()
@@ -111,8 +114,8 @@ class TestCastling(unittest.TestCase):
 
         engine.set_board_factory(5, 2, board_factory)
         engine.set_action(action)
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
 
     #I'm not sure which game mode would ever need something like this
     #but you can castle diagonally
@@ -158,5 +161,5 @@ class TestCastling(unittest.TestCase):
         engine.set_board_factory(6, 3, board_factory)
         engine.set_action(action)
 
-        engine.run_engine(500)
-        engine.run_tests(self, delta=0.07)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
