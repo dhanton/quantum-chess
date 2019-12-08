@@ -451,7 +451,9 @@ class QiskitEngine(BaseEngine):
         target_piece1 = self.classical_board[target1.x][target1.y]
         target_piece2 = self.classical_board[target2.x][target2.y]
 
-        new_source_piece = NullPiece
+        #the source piece is always swapped with the target2
+        #so unless the path is blocked we know what piece target2 has
+        new_source_piece = target_piece2
 
         if piece.is_move_slide():
             qutils.perform_split_slide(self, source, target1, target2)
@@ -461,13 +463,12 @@ class QiskitEngine(BaseEngine):
             
             #set the source piece to null if any of the paths is not blocked,
             #since the piece will always slide through that one if the other is blocked
-            if path1_blocked and path2_blocked:
+            if path1_blocked and path2_blocked and new_source_piece == NullPiece:
                 new_source_piece = piece
+                new_source_piece.collapsed = False
         else:
             qutils.perform_split_jump(self, source, target1, target2)
 
-        #we should only entangle flags between the qubits to which we apply iswap_sqrt
-        #TODO: find best way to do this
         self.entangle_flags(piece.qflag, target_piece1.qflag)
         self.entangle_flags(piece.qflag, target_piece2.qflag)
 
@@ -477,56 +478,44 @@ class QiskitEngine(BaseEngine):
         if target_piece2 == NullPiece:
             self.classical_board[target2.x][target2.y] = piece.copy()
 
-        if target_piece1 == NullPiece and target_piece2 == NullPiece:
-            self.classical_board[source.x][source.y] = new_source_piece.copy()
+        self.classical_board[source.x][source.y] = new_source_piece.copy()
 
         self.set_piece_uncollapsed(target1)
         self.set_piece_uncollapsed(target2)
-        self.set_piece_uncollapsed(source)
     
     def merge_move(self, source1, source2, target):
         piece1 = self.classical_board[source1.x][source1.y]
         piece2 = self.classical_board[source2.x][source2.y]
         target_piece = self.classical_board[target.x][target.y]
 
-        new_source1_piece = NullPiece
-        new_source2_piece = NullPiece
+        #the target piece is always swapped with the source2
+        #so unless the path is blocked we know what piece source2 has
+        new_source2_piece = target_piece
 
-        if piece1.is_move_slide:
+        if piece1.is_move_slide():
             qutils.perform_merge_slide(self, source1, source2, target)
 
-            #set source piece to null only if the path for that piece is not blocked,
-            #since if it's blocked then the piece might not be able to slide through
-            if self.entangle_path_flags(piece1.qflag, source1, target):
-                piece1.collapsed = False
-                new_source1_piece = piece1
-
-            if self.entangle_path_flags(piece2.qflag, source2, target):
-                piece2.collapsed = False
-                new_source2_piece = piece2
-
+            self.entangle_path_flags(piece1.qflag, source1, target)
+            path2_blocked = self.entangle_path_flags(piece2.qflag, source2, target)
+                
+            if path2_blocked and new_source2_piece == NullPiece:
+                new_source2_piece = piece1
+                new_source2_piece.collapsed = False
         else:
             qutils.perform_merge_jump(self, source1, source2, target)
-
-        #we should only entangle flags between the qubits to which we apply iswap_sqrt
-        #TODO: find best way to do this        
+   
         self.entangle_flags(piece1.qflag, piece2.qflag)
         self.entangle_flags(piece1.qflag, target_piece.qflag)
 
+        self.classical_board[source2.x][source2.y] = new_source2_piece.copy()
+
+        #for merge is very hard (in general) to predict where are the pieces are going to end up
+        #without simulating the statevector completely
+        #so we set both pieces to non null, even though they can have a 0% probability of existing
+        piece1.collapsed = False
         self.classical_board[target.x][target.y] = piece1.copy()
+        self.classical_board[source1.x][source1.y] = piece1.copy()
 
-        if target_piece == NullPiece:
-            self.classical_board[source1.x][source1.y] = new_source1_piece.copy()
-            self.classical_board[source2.x][source2.y] = new_source2_piece.copy()
-
-        #TODO: This is very wrong (the total number of pieces is always conserved)
-        #fix it depending on if multiple pieces of the same type exist in the game
-        if target_piece == NullPiece and piece1.collapsed and piece2.collapsed:
-            self.classical_board[target.x][target.y].collapsed = True
-        else:        
-            self.set_piece_uncollapsed(source1)
-            self.set_piece_uncollapsed(source2)
-            self.set_piece_uncollapsed(target)
 
     def castling_move(self, king_source, rook_source, king_target, rook_target):
         king = self.classical_board[king_source.x][king_source.y]

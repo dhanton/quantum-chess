@@ -1,5 +1,5 @@
 #used when there are multiple expected results with different probabilities
-standard_shots = 400
+standard_shots = 500
 standard_delta = 0.07
 
 #used when there is only one expected result with 100% probability

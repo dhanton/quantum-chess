@@ -18,8 +18,8 @@ class TestJumpMove(unittest.TestCase):
             1
         )
 
-        engine.set_board_factory(3, 3, lambda board: board.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE)))
-        engine.set_action(lambda board: board.split_move(Point(0, 0), Point(1, 0), Point(0, 1)))
+        engine.set_board_factory(3, 3, lambda qchess: qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE)))
+        engine.set_action(lambda qchess: qchess.split_move(Point(0, 0), Point(1, 0), Point(0, 1)))
         engine.run_engine(entangle_shots)
         engine.run_tests(self, delta=entangle_delta)
 
@@ -38,8 +38,12 @@ class TestJumpMove(unittest.TestCase):
             qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
             qchess.split_move(Point(0, 0), Point(1, 0), Point(0, 1))
 
+        def action(qchess):
+            qchess.merge_move(Point(0, 1), Point(1, 0), Point(1, 1))
+            qchess.engine.collapse_all()
+
         engine.set_board_factory(3, 3, board_factory)
-        engine.set_action(lambda board: board.merge_move(Point(0, 1), Point(1, 0), Point(1, 1)))
+        engine.set_action(action)
         engine.run_engine(entangle_shots)
         engine.run_tests(self, delta=entangle_delta)
 
@@ -80,7 +84,7 @@ class TestJumpMove(unittest.TestCase):
             qchess.add_piece(1, 2, Piece(PieceType.KING, Color.BLACK))
 
         engine.set_board_factory(3, 3, board_factory)
-        engine.set_action(lambda board: board.standard_move(Point(1, 1), Point(1, 2)))
+        engine.set_action(lambda qchess: qchess.standard_move(Point(1, 1), Point(1, 2)))
         engine.run_engine(standard_shots)
         engine.run_tests(self, delta=standard_delta)
 
@@ -120,7 +124,7 @@ class TestJumpMove(unittest.TestCase):
             qchess.add_piece(1, 2, Piece(PieceType.KING, Color.WHITE))
 
         engine.set_board_factory(3, 3, board_factory)
-        engine.set_action(lambda board: board.standard_move(Point(1, 2), Point(1, 1)))
+        engine.set_action(lambda qchess: qchess.standard_move(Point(1, 2), Point(1, 1)))
         engine.run_engine(standard_shots)
         engine.run_tests(self, delta=standard_delta)
 
@@ -158,12 +162,55 @@ class TestJumpMove(unittest.TestCase):
         engine.run_engine(standard_shots)
         engine.run_tests(self, delta=standard_delta)
 
-    def test_merge_of_piece_and_split(self):
+    def test_double_split_merge(self):
+        engine = QuantumTestEngine()
+        engine.add_board_state(
+            [
+                ['0', '0', 'K'],
+                ['0', '0', '0'],
+                ['0', '0', '0'],
+            ],
+            0.25
+        )
+
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', '0', 'K'],
+                ['0', '0', '0'],
+            ],
+            0.375
+        )
+
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', '0', '0'],
+                ['0', '0', 'K'],
+            ],
+            0.375
+        )
+
+        def board_factory(qchess):
+            qchess.add_piece(0, 0, Piece(PieceType.KING, Color.WHITE))
+            qchess.split_move(Point(0, 0), Point(1, 0), Point(1, 1))
+            qchess.split_move(Point(1, 0), Point(2, 0), Point(2, 1))
+
+        def action(qchess):
+            qchess.merge_move(Point(2, 1), Point(1, 1), Point(2, 2))
+            qchess.engine.collapse_all()
+
+        engine.set_board_factory(3, 3, board_factory)
+        engine.set_action(action)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)
+
+    def test_two_piece_single_split_merge(self):
         engine = QuantumTestEngine()
         engine.add_board_state(
             [
                 ['0', '0', '0'],
-                ['0', 'K', '0'],
+                ['K', 'K', '0'],
                 ['0', '0', '0'],
             ],
             0.25
@@ -181,7 +228,7 @@ class TestJumpMove(unittest.TestCase):
         engine.add_board_state(
             [
                 ['0', '0', '0'],
-                ['0', '0', '0'],
+                ['K', '0', '0'],
                 ['0', 'K', '0'],
             ],
             0.5
