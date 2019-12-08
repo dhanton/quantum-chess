@@ -1,0 +1,64 @@
+{
+    "board": [
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "K", "0", "0"],
+        ["0", "0", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Now there is a 50% chance the piece is in each of those squares.",
+                "You can split it again, dividing it into three squares (one with 50% chance and two with 25% chance each)."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "When you click 'Collapse', the piece will collapse and you will know where it is with certanty, breaking the superposition.",
+                "Note that this button is not allowed during normal games.",
+                "In normal games, pieces collapse when certain actions are performed (more on that later)."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "You can still move the piece after it is collapsed, but now you know where it is for sure."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        },
+
+        {
+            "message": [
+                "Perfect!"
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Standard", "Split"]
+            }
+        }
+        
+    ],
+
+    "initial_message": [
+        "Now for the more interesting moves.",
+        "Click the button (or s on your keyboard) until it reads 'Split' and then select your piece and two target squares.",
+        "This move will split the piece into a state of superposition. That means that the piece is in both places at once, and only when collapsing it you'll know where it is with certanty."
+    ]
+}

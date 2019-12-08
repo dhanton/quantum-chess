@@ -1,0 +1,27 @@
+{
+    "board": [
+        ["k", "n", "b", "r"],
+        ["p", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "P"],
+        ["R", "B", "N", "K"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Good job.",
+                "There are two main differences with standard chess moves: there is no check or checkmate (you must capture the king) and only queen promotion is allowed."
+            ],
+
+            "valid_moves": {
+                "move_type": ["Standard"]
+            }
+        }
+    ],
+
+    "initial_message": [
+        "Any move that you can make in standard Chess you can make in Quantum Chess.",
+        "Simply click the first button (or s on your keyboard) until it reads 'Standard' and then select source and target squares."
+    ]
+}

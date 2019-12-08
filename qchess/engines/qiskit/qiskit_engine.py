@@ -128,9 +128,6 @@ class QiskitEngine(BaseEngine):
 
             bitstring = list(result.get_counts().keys())[0].split(' ')[1]
 
-            if collapse_all:
-                self.qflag_index = 0
-
             for i, char in enumerate(bitstring[::-1]):
                 pos = self.qchess.get_board_point(i)
 
@@ -166,13 +163,21 @@ class QiskitEngine(BaseEngine):
 
                         #remove the '1' in that position from binary qflag
                         qflag ^= new_qflag
-                    else:
-                        new_qflag = 1 << self.qflag_index
-                        self.qflag_index += 1
 
-                    #assign new original qflag
-                    piece.qflag = new_qflag 
+                        #assign new original qflag
+                        piece.qflag = new_qflag 
                     
+        #assign new qflags to all the pieces
+        if collapse_all:
+            self.qflag_index = 0
+
+            for i in range(self.height * self.width):
+                piece = self.qchess.get_piece(i)
+                if piece == NullPiece: continue
+                
+                piece.qflag = 1 << self.qflag_index
+                self.qflag_index += 1
+        
         all_collapsed = collapse_all
 
         if not all_collapsed:
@@ -514,8 +519,8 @@ class QiskitEngine(BaseEngine):
             self.classical_board[source1.x][source1.y] = new_source1_piece.copy()
             self.classical_board[source2.x][source2.y] = new_source2_piece.copy()
 
-        #unless both sources are collapsed and the target is empty, we can't
-        #be sure the target is collapsed
+        #TODO: This is very wrong (the total number of pieces is always conserved)
+        #fix it depending on if multiple pieces of the same type exist in the game
         if target_piece == NullPiece and piece1.collapsed and piece2.collapsed:
             self.classical_board[target.x][target.y].collapsed = True
         else:        

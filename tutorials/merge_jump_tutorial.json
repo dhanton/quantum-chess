@@ -1,0 +1,63 @@
+{
+    "board": [
+        ["K", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Let's split the king again before merging it."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Now let's merge two of the split kings.",
+                "Select the two kings you want to merge and the square you want to merge them to."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "Notice that the king is still not collapsed, you've just merged two of them combining their probabilities.",
+                "You can collapse the system now to find out where the king is."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "move_type": ["Merge"]
+            }
+        },
+
+        {
+            "message": [
+                "Perfect!"
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+        
+    ],
+
+    "initial_message": [
+        "The opposite move of a split is called a 'Merge'.",
+        "It undoes the split, but it doesn't necesarily collapse the piece.",
+        "To try it out, first split the king."
+    ]
+}

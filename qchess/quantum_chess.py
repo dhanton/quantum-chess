@@ -51,6 +51,10 @@ class QChess:
         #empty if castling is not allowed
         self.castling_types = []
 
+        #you can't generally collapse the board,
+        #but will be overwriten by TutorialQChess
+        self.collapse_allowed = False
+
         self.ended = False
 
         self.move_types = [
@@ -282,10 +286,10 @@ class QChess:
             
         return move_index, move_points
 
-    def perform_command_move(self, command):
+    def perform_command_move(self, command, check_current_turn=False):
         success = False
 
-        move_index, move_points = self.command_to_move_points(command, check_current_turn=True)
+        move_index, move_points = self.command_to_move_points(command, check_current_turn)
 
         if move_points:
             success = self.move_types[move_index]['func'](self, *move_points)
@@ -293,6 +297,10 @@ class QChess:
             print('Invalid move.')
 
         return success
+
+    def clear_console(self):
+        #clear for unix based systems, cls for windows
+        os.system('cls' if os.name == 'nt' else 'clear')
 
     def ascii_render(self):
         s = ""
@@ -332,7 +340,7 @@ class QChess:
 
             self.window[(i, j)].update(button_color = ('white', new_color))
 
-    def generate_initial_render_layout(self):
+    def generate_initial_render_layout(self, create_collapse_button=False):
         IMAGE_PATH = 'images'
 
         #load the .png files
@@ -373,13 +381,16 @@ class QChess:
 
         move_type_button = sg.Button(self.move_types[self.current_move]['name'],
                                         key='MOVE-TYPE')
-        
-        
-        layout = [[sg.Column(board_layout)], [move_type_button]]
+
+        if create_collapse_button:
+            collapse_button = sg.Button('Collapse', key='COLLAPSE')
+            layout = [[sg.Column(board_layout)], [move_type_button, collapse_button]]
+        else:
+            layout = [[sg.Column(board_layout)], [move_type_button]]
 
         return layout
 
-    def create_window(self):
+    def create_window(self, create_collapse_button=False):
         self.current_move = 0
 
         #each turn will be filled with (source, target) or (source1, source2, target) etc
@@ -394,7 +405,7 @@ class QChess:
 
         self.showing_entanglement = False
 
-        layout = self.generate_initial_render_layout()
+        layout = self.generate_initial_render_layout(create_collapse_button=create_collapse_button)
 
         self.window = sg.Window('Quantum Chess',
                            layout, default_button_element_size=(12, 1),
@@ -432,7 +443,7 @@ class QChess:
 
                 left_click.Widget.bind("<Button-3>", right_click.ButtonReboundCallback)
 
-    def main_loop(self):
+    def main_loop(self, check_current_turn=True, check_game_over=True):
         self.ended = False
 
         while True:
@@ -441,7 +452,7 @@ class QChess:
             if event in (None, 'Exit'):
                 break
 
-            #change move type (standard, split, merge)
+            #move type button was pressed
             elif event == 'MOVE-TYPE' or 's' in event:
                 self.current_move = (self.current_move + 1) % 3
                 new_text = self.move_types[self.current_move]['name']
@@ -454,7 +465,14 @@ class QChess:
 
                 self.current_move_points = []
                 
-            #square was pressed
+            #collapse button was pressed
+            elif self.collapse_allowed and event == 'COLLAPSE':
+                self.collapse_board()
+                self.redraw_board()
+
+                self.prev_move_points = []
+
+            #a square was pressed
             elif type(event) is tuple:
                 a = Point(event[0], event[1])
                 move_type = self.move_types[self.current_move]
@@ -479,8 +497,8 @@ class QChess:
 
                             continue
                         
-                        #source can never be a different team
-                        if piece.color != self.current_turn:
+                        #source can never be a different team if check_current_turn is false
+                        if check_current_turn and piece.color != self.current_turn:
                             continue
                     
                     #add pressed button and select it in green
@@ -494,7 +512,9 @@ class QChess:
                         if success:
                             #deselect all squares after a move
                             self.redraw_board()
-                            self.current_turn = Color.opposite(self.current_turn)
+
+                            if check_current_turn:
+                                self.current_turn = Color.opposite(self.current_turn)
                             
                             #select only the squares involved in the move
                             for p in self.current_move_points:
@@ -503,13 +523,15 @@ class QChess:
                             self.prev_move_points = self.current_move_points
 
                             #check if there are no kings left for a color
-                            if self.is_game_over():
+                            if check_game_over and self.is_game_over():
                                 self.ended = True
                         else:
                             #deselect only the squares involved in the move,
                             #because it wasn't succesful
+                            #(only if they weren't in the previous move)
                             for p in self.current_move_points:
-                                self.select_button(p.x, p.y, 'Default')
+                                if not p in self.prev_move_points:
+                                    self.select_button(p.x, p.y, 'Default')
 
                         self.current_move_points = []
 
@@ -544,34 +566,39 @@ class QChess:
 
         self.window.close()
 
-    def ascii_main_loop(self):
-        #clear for unix based systems, cls for windows
-        clear_command = 'cls' if os.name == 'nt' else 'clear'
+    def ascii_main_loop(self, check_current_turn=True, check_game_over=True):
+        self.clear_console()
 
-        os.system(clear_command)
         print('\n')
         self.ascii_render()
 
-        while True:
+        self.ended = False
+
+        while not self.ended:
             command = input('')
 
-            os.system(clear_command)
+            self.clear_console()
 
-            success = self.perform_command_move(command)
+            if self.collapse_allowed and command == 'collapse':
+                self.collapse_board()
+                success = True
+            else:
+                success = self.perform_command_move(command, check_current_turn=check_current_turn)
 
-            print('')
+            print()
             #if move wasn't succesful then an error was printed
             if success: 
                 #if it was succesful we print a blank line to keep
                 #the board in the same position
-                print('')
+                print()
 
-                self.current_turn = Color.opposite(self.current_turn)
+                if check_current_turn:
+                    self.current_turn = Color.opposite(self.current_turn)
 
             self.ascii_render()
 
-            if self.is_game_over():
-                break
+            if check_game_over and self.is_game_over():
+                self.ended = True
 
     def get_simplified_matrix(self):
         m = []
@@ -583,6 +610,9 @@ class QChess:
             m.append(row)
 
         return m
+
+    def collapse_board(self):
+        self.engine.collapse_all()
 
     def standard_move(self, source, target, force=False):
         if not self.in_bounds(source.x, source.y):
