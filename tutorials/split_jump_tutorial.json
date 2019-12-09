@@ -15,6 +15,7 @@
 
             "valid_moves": {
                 "source_piece_type": ["KING"],
+                "target_piece_type": ["NONE"],
                 "move_type": ["Split"]
             }
         },
@@ -28,6 +29,7 @@
 
             "valid_moves": {
                 "source_piece_type": ["KING"],
+                "target_piece_type": ["NONE"],
                 "move_type": ["Split"]
             }
         },
@@ -50,6 +52,7 @@
 
             "valid_moves": {
                 "source_piece_type": ["KING"],
+                "target_piece_type": ["NONE"],
                 "move_type": ["Standard", "Split"]
             }
         }

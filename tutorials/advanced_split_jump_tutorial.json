@@ -1,0 +1,76 @@
+{
+    "board": [
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "K", "0"],
+        ["0", "K", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Good job. As you can see now this is equivalent to a standard move.",
+                "But you have to be careful when the split targets don't have the same pieces in them, as the move is not symmetrical.",
+                "Click collapse again."
+            ],
+
+            "valid_moves": {
+                "source": ["b1"],
+                "target1": ["c2"],
+                "target2": ["b2", "c1"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Because the pieces were collapsed already, nothing happened.",
+                "Now try to split the king again, but this time select the empty square first and then the other king."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "target_piece_type": ["KING"],
+                "move_type": ["Standard"],
+                "collapse": true
+            }
+        },
+
+        {
+            "message": [
+                "Now there are three kings (a superposition) and by right-clicking them we can see how the kings are entangled exactly.",
+                "This is the asymmetry of split: if one of the squares is empty and the other is not, then the move is different depending on the order in which you perform it.",
+                "Collapse the kings to see where they really are."
+            ],
+
+            "valid_moves": {
+                "source_piece_type": ["KING"],
+                "source": ["b2", "c1"],
+                "target2": ["c2"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Perfect!",
+                "Notice that the total number of kings (2) is conserved.",
+                "To summarize, split must be performed into empty pieces or pieces of the same type and color (you can't use it to capture).",
+                "And if the squares are different, then the order in which you perform the move matters."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+        
+    ],
+
+    "initial_message": [
+        "Let's dive deeper into the split move.",
+        "Split can also be performed into other pieces of the same type and color, creating new quantum posibilities.",
+        "As you can see now, there are two pieces on the board.",
+        "These are two independent collapsed pieces (not entangled).",
+        "Try splitting the left king into the other king and then into an empty square."
+    ]
+}

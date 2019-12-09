@@ -280,3 +280,51 @@ class TestJumpMove(unittest.TestCase):
         engine.set_action(action)
         engine.run_engine(standard_shots)
         engine.run_tests(self, delta=standard_delta)
+
+    def test_merge_proper_capture_collapse(self):
+        engine = QuantumTestEngine()
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', 'K', '0'],
+                ['0', '0', '0'],
+                ['0', '0', 'K'],
+            ],
+            0.25
+        )
+        
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', 'K', '0'],
+                ['0', '0', '0'],
+                ['0', 'K', '0'],
+            ],
+            0.5
+        )
+
+        engine.add_board_state(
+            [
+                ['0', '0', '0'],
+                ['0', 'k', '0'],
+                ['0', '0', '0'],
+                ['0', 'K', 'K'],
+            ],
+            0.25
+        )
+
+        def board_factory(qchess):
+            qchess.add_piece(1, 1, Piece(PieceType.KING, Color.BLACK))
+            qchess.add_piece(1, 2, Piece(PieceType.KING, Color.WHITE))
+            qchess.add_piece(2, 2, Piece(PieceType.KING, Color.WHITE))
+
+            qchess.split_move(Point(1, 2), Point(1, 3), Point(2, 3))
+            qchess.merge_move(Point(1, 3), Point(2, 2), Point(1, 2))
+
+        def action(qchess):
+            qchess.standard_move(Point(1, 2), Point(1, 1))
+
+        engine.set_board_factory(3, 4, board_factory)
+        engine.set_action(action)
+        engine.run_engine(standard_shots)
+        engine.run_tests(self, delta=standard_delta)

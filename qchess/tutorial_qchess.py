@@ -117,40 +117,26 @@ class TutorialQChess(QChess):
                     
                 valid_moves['move_type'] = json_move
 
-            #check points are valid and in bounds
-            if 'source' in json_valid_moves:
-                json_move = json_valid_moves['source']
+            #check points have a valid name, are valid and are in bounds
+            possible_point_names = ['source', 'source1', 'source2', 'target', 'target1', 'target2']
 
-                #transform the point to Point() class instance
-                def action(json_point):
-                    return self.string_to_point(json_point)
+            for point_name in possible_point_names:
+                if point_name in json_valid_moves:
+                    json_move = json_valid_moves[point_name]
 
-                #return transformed points (from string (a1, b3, etc) to Point instance)
-                source_points = _perform_check_action(json_move, action)
+                    #transform the point to Point() class instance
+                    def action(json_point):
+                        return self.string_to_point(json_point)
 
-                if source_points:
-                    #if all points are valid, add them
-                    valid_moves['source'] = source_points
-                else:
-                    #otherwise raise error
-                    raise ValueError('Invalid source squares')
+                    #return transformed points (from string (a1, b3, etc) to Point instance)
+                    points = _perform_check_action(json_move, action)
 
-            #check points are valid and in bounds
-            if 'target' in json_valid_moves:
-                json_move = json_valid_moves['target']
-
-                def action(json_point):
-                    return self.string_to_point(json_point)
-
-                #return transformed points (from string (a1, b3, etc) to Point instance)
-                target_points = _perform_check_action(json_move, action)
-
-                if target_points:
-                    #if all points are valid, add them
-                    valid_moves['source'] = target_points
-                else:
-                    #otherwise raise error
-                    raise ValueError('Invalid source squares')
+                    if points:
+                        #if all points are valid, add them
+                        valid_moves[point_name] = points
+                    else:
+                        #otherwise raise error
+                        raise ValueError('Invalid {} squares'.format(point_name))
 
             if 'collapse' in json_valid_moves:
                 if not type(json_valid_moves['collapse']) == bool:
@@ -331,12 +317,16 @@ class TutorialQChess(QChess):
                 if not source in move:
                     return False
 
-            #check target squares
-            if 'target' in valid_moves:
-                move = valid_moves['target']
+            #check first target square
+            if 'target1' in valid_moves:
+                move = valid_moves['target1']
 
                 if not target1 in move:
                     return False
+            
+            #check second target square
+            if 'target2' in valid_moves:
+                move = valid_moves['target2']
 
                 if not target2 in move:
                     return False
@@ -385,12 +375,16 @@ class TutorialQChess(QChess):
                 if not 'Merge' in move:
                     return False
 
-            #check source squares
-            if 'source' in valid_moves:
-                move = valid_moves['source']
+            #check first source square
+            if 'source1' in valid_moves:
+                move = valid_moves['source1']
 
                 if not source1 in move:
                     return False
+            
+            #check second source square
+            if 'source2' in valid_moves:
+                move = valid_moves['source2']
 
                 if not source2 in move:
                     return False

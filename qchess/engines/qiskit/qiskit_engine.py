@@ -469,19 +469,21 @@ class QiskitEngine(BaseEngine):
         else:
             qutils.perform_split_jump(self, source, target1, target2)
 
-        self.entangle_flags(piece.qflag, target_piece1.qflag)
-        self.entangle_flags(piece.qflag, target_piece2.qflag)
+        if not piece.collapsed or not target_piece1.collapsed:
+            #entangle only the pieces affected by iSwap_sqrt
+            self.entangle_flags(piece.qflag, target_piece1.qflag)
 
         if target_piece1 == NullPiece:
             self.classical_board[target1.x][target1.y] = piece.copy()
 
-        if target_piece2 == NullPiece:
-            self.classical_board[target2.x][target2.y] = piece.copy()
-
+        self.classical_board[target2.x][target2.y] = piece.copy()
         self.classical_board[source.x][source.y] = new_source_piece.copy()
 
-        self.set_piece_uncollapsed(target1)
-        self.set_piece_uncollapsed(target2)
+        #only uncollapse the pieces if state |t1, t2> is not |00> or |11>
+        #because iSwap_sqrt leaves these states untouched
+        if target_piece1 == NullPiece:
+            self.set_piece_uncollapsed(target1)
+            self.set_piece_uncollapsed(target2)
     
     def merge_move(self, source1, source2, target):
         piece1 = self.classical_board[source1.x][source1.y]
@@ -504,18 +506,19 @@ class QiskitEngine(BaseEngine):
         else:
             qutils.perform_merge_jump(self, source1, source2, target)
    
-        self.entangle_flags(piece1.qflag, piece2.qflag)
-        self.entangle_flags(piece1.qflag, target_piece.qflag)
+        if not piece1.collapsed or not piece2.collapsed:
+            #entangle only the pieces affected by iSwap_sqrt
+            self.entangle_flags(piece1.qflag, piece2.qflag)
 
+        if target_piece == NullPiece:
+            self.classical_board[target.x][target.y] = piece1.copy()
+
+        self.classical_board[source1.x][source1.y] = piece2.copy()
         self.classical_board[source2.x][source2.y] = new_source2_piece.copy()
 
-        #for merge is very hard (in general) to predict where are the pieces are going to end up
-        #without simulating the statevector completely
-        #so we set both pieces to non null, even though they can have a 0% probability of existing
-        piece1.collapsed = False
-        self.classical_board[target.x][target.y] = piece1.copy()
-        self.classical_board[source1.x][source1.y] = piece1.copy()
-
+        if target_piece == NullPiece:
+            self.set_piece_uncollapsed(source1)
+            self.set_piece_uncollapsed(target)
 
     def castling_move(self, king_source, rook_source, king_target, rook_target):
         king = self.classical_board[king_source.x][king_source.y]
