@@ -1,0 +1,87 @@
+{
+    "board": [
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "k"],
+        ["0", "0", "0", "0"],
+        ["P", "0", "P", "K"]
+    ],
+
+    "pawn_promotion_allowed": false,
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "The first time a pawn moves it can perform a double step, which is a a slide and as such can create entanglement.",
+                "To see it, split the white king in front of the pawn."
+            ],
+
+            "valid_moves": {
+                "source": ["a1"],
+                "target": ["a2"]
+            }
+        },
+
+        {
+            "message": [
+                "Now perform a double step with the second pawn."
+            ],
+
+            "valid_moves": {
+                "source": ["d1"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "As you can see (right-click), the pawn and the white king are entangled.",
+                "Let's do something else before collapsing.",
+                "Split the black king like you did with the white king."
+            ],
+
+            "valid_moves": {
+                "source": ["c1"],
+                "target": ["c3"]
+            }
+        },
+
+        {
+            "message": [
+                "You can try right-clicking the different pieces to see how they're entangled with each other.",
+                "Now that everything is setup we can see one of the most important properties of the pawn.",
+                "Capture the black king with the white pawn and let's see what happens."
+            ],
+
+            "valid_moves": {
+                "source": ["d3"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Perfect!",
+                "Let's break down what happened.",
+                "As we've seen in previous tutorials the pawn collapsed becaused you try capturing with it.",
+                "The white king also collapsed because it was entangled with the pawn.",
+                "But that's not all.",
+                "Because the pawn cannot move diagonally unless an enemy piece is present, to capture a piece the pawn must also collapse that piece.",
+                "This is something unique to the pawn (the rest of the pieces just collapse themselves when capturing).",
+                "So the black king was collapsed and (if every piece aligns) captured as well!"
+            ],
+
+            "valid_moves": {
+                "source": ["c3"],
+                "target": ["d4"]
+            }
+        }
+    ],
+
+    "initial_message": [
+        "Pawns can jump and capture like they do in standard chess, but they can't split or merge.",
+        "Also, depending on the game mode, they can perform a double step or promote to a queen.",
+        "The simplest move pawns can make is the single step.",
+        "Perform a single step with the leftmost pawn."
+    ]
+}

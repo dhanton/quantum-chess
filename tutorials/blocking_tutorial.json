@@ -1,0 +1,59 @@
+{
+    "board": [
+        ["0", "0", "0", "0"],
+        ["0", "K", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "N", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Good job.",
+                "Try performing a standard move with the king towards one of the split knights.",
+                "Note that if the knights were collapsed this move would be illegal and you would not be allowed to perform it."
+            ],
+
+            "valid_moves": {
+                "source": ["b1"],
+                "target1": ["a3", "c3"],
+                "target2": ["a3", "c3"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see, because of the double occupancy rule, the knight has collapsed to see if the king's move is valid.",
+                "If the knight collapses where the king wants to move then the king stays in place.",
+                "On the other hand, if target square is empty after it's collapsed then the king moves normally.",
+                "To check that the knight is indeed properly collapsed, click the collapse button."
+            ],
+
+            "valid_moves": {
+                "source": ["b3"],
+                "target": ["a3", "c3"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "Great!",
+                "Nothing happened (as we expected) because the pieces where all already collapsed.",
+                "To summarize, when a piece in a state of superposition is blocking a standard move that piece is collapsed to either deny the move or make room for it."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "There is one last fundamental rule of Quantum Chess we have to look at before we can move on to the more interesting aspects.",
+        "It's called the Double Occupancy rule and it forbids different types of pieces to occupy the same square.",
+        "The way this rule is enforced is very simple: if any move would cause two different pieces to appear in the same square, then one is collapsed to 'make room' for the other.",
+        "To see how this rule works and why it's important, split the knight into the two squares that are adjacent to the king."
+    ]
+}

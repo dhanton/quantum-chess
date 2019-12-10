@@ -1,0 +1,58 @@
+{
+    "board": [
+        ["0", "R", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["K", "0", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Now move the rook downwards to the other side of the board."
+            ],
+
+            "valid_moves": {
+                "source": ["a3"],
+                "forbidden_target": ["b2", "b4"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job!",
+                "As you can see now the rook is entangled with the king (right-click to visualize it).",
+                "That means that if you knew the position of one of the pieces you could instantly infer the position of the other.",
+                "Click collapse to break the superposition."
+            ],
+
+            "valid_moves": {
+                "source": ["b5"],
+                "target": ["b1"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see (right-click) the pieces are not entangled anymore.",
+                "To summarize, when passing through a piece in a state of superposition you will entangle both pieces and their positions will be dependent.",
+                "When passing through multiple pieces at the same time all pieces will entangle with each other.",
+                "Note that you can also slide through other pieces when performing split or merge, and you will entangle all pieces within both paths."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "Until now we've focused on kings and knights, which 'jump' when performing a move.",
+        "Hovewer, bishops and rooks (and of course queens) 'slide' when moving.",
+        "Slides behave exactly like jumps in every way, but they have one extra quantum property: they can create entanglement.",
+        "To see it, first split the king towards the right and downwards or upwards."
+    ]
+}

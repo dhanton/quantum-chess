@@ -55,8 +55,10 @@
             "message": [
                 "Perfect!",
                 "Notice that the total number of kings (2) is conserved.",
-                "To summarize, split must be performed into empty pieces or pieces of the same type and color (you can't use it to capture).",
-                "And if the squares are different, then the order in which you perform the move matters."
+                "To summarize, split must be performed into empty squares or pieces of the same type and color (you can't use it to capture).",
+                "And if the squares are different, then the order in which you perform the move matters.",
+                "It's important to remember that the merge move behaves the same way: you can merge two pieces into another piece of the same type and color, and you can't use it to capture.",
+                "The order in which you perform merge also matters."
             ],
 
             "valid_moves": {

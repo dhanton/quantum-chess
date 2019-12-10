@@ -1,0 +1,54 @@
+{
+    "board": [
+        ["K", "0", "0", "0"],
+        ["0", "k", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "0", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Now that the white king is split, try to capture the black king.",
+                "(You'll have to choose one of the splits)"
+            ],
+
+            "valid_moves": {
+                "source": ["a4"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "If the white king was where you selected then the black king was captured.",
+                "If you weren't so lucky and the white king was in the other square, then the capture wasn't performed.",
+                "Whatever happened the white king is collapsed and you can click the collapse button to check it."
+            ],
+
+            "valid_moves": {
+                "source": ["a3", "b4"],
+                "target": ["b3"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "Nothing happened, as expected.",
+                "To summarize, when you try to capture a piece your piece will be collapsed first to see if the capture is valid.",
+                "Note that capturing doesn't collapse the piece that's being captured, only your own."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "The Double Occupancy rule is also used when trying to capture with a piece that is in superposition.",
+        "To see how it works, split the white king to the left and downwards."
+    ]
+}

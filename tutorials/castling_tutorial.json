@@ -1,0 +1,77 @@
+{
+    "board": [
+        ["0", "0", "0", "0", "0"],
+        ["0", "0", "0", "0", "0"],
+        ["0", "k", "0", "k", "0"],
+        ["R", "0", "0", "0", "K"]
+    ],
+
+    "castling_types": [
+        {
+            "rook_start_square": "a1",
+            "rook_end_square": "d1",
+            "king_start_square": "e1",
+            "king_end_square": "c1"
+        }
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "This king will block the path.",
+                "Now split the other black king in the same way."
+            ],
+
+            "valid_moves": {
+                "source": ["b2"],
+                "target1": ["b1", "b3"],
+                "target2": ["b1", "b3"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "This king will block one of the target squares.",
+                "Castle now in the same way you would castle in standard chess (by moving the king)."
+            ],
+
+            "valid_moves": {
+                "source": ["d2"],
+                "target1": ["d1", "d3"],
+                "target2": ["d1", "d3"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "Since you cannot use castle to capture both targets must be empty.",
+                "For this reason, both target squares are collapsed and if something is blocking them then castling is not performed.",
+                "If castling is performed then the pieces along the way are entangled, as you can see with (righ-click)."
+            ],
+
+            "valid_moves": {
+                "source": ["e1"],
+                "target": ["c1"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see, castling only occurs if no piece is blocking the way or the target squares."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "Castling works exaclty like in standard chess, but entanglement can occur and check-related restrictions are lifted (since there is no check in Quantum Chess).",
+        "Consider the queen side castle of standard chess.",
+        "To start, split the leftmost black king upwards and downwards."
+    ]
+}

@@ -1,0 +1,104 @@
+{
+    "board": [
+        ["0", "0", "0", "0"],
+        ["0", "p", "0", "p"],
+        ["0", "0", "0", "0"],
+        ["P", "k", "P", "K"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Now split the white king in front of the rightmost white pawn."
+            ],
+
+            "valid_moves": {
+                "source": ["b1"],
+                "forbidden_target": ["c2"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Now perform a double step with the leftmost white pawn."
+            ],
+
+            "valid_moves": {
+                "source": ["d1"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see, the leftmost black pawn can capture the other pawn en passant.",
+                "But there's a difference with standard chess: the target is blocked by an entangled piece.",
+                "Capture en passant to see what happens."
+            ],
+
+            "valid_moves": {
+                "source": ["a1"],
+                "target": ["a3"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "Before capturing, the white pawn and the black king entangled with it are collapsed.",
+                "En passant is then performed only when the square is not blocked.",
+                "Now to see the other type of quantum en passant perform a double step with the other white pawn."
+            ],
+
+            "valid_moves": {
+                "source": ["b3"],
+                "target": ["a2"]
+            }
+        },
+
+        {
+            "message": [
+                "The situation is now simliar but slightly different to the previous case.",
+                "Now the capture is blocked by a white piece (instead of a black piece), which can also be captured.",
+                "Capture en passant to see what happens."
+            ],
+
+            "valid_moves": {
+                "source": ["c1"],
+                "target": ["c3"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see the black pawn has performed the capture, but without collapsing the other two pieces.",
+                "This is because the capture is valid either because the king is there (normal capture) or because the white pawn has moved two steps (en passant).",
+                "And so because the capture is valid in every possible scenario it's performed without the need to collapse.",
+                "Collapse now to see which scenario has taken place."
+            ],
+
+            "valid_moves": {
+                "source": ["d3"],
+                "target": ["c2"]
+            }
+        },
+
+        {
+            "message": [
+                "Perfect.",
+                "As you can see in this case en passant has effectively only captured one of the pieces, but you can't now which one until you collapse them!"
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "Pawns also have access to a capture move called 'en passant'.",
+        "En passant works exactly like in standard chess, but things can get a bit trickier in the presence of entanglement.",
+        "To see how, first split the black king in front of the leftmost pawn."
+    ]
+}

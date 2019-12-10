@@ -62,6 +62,6 @@
     "initial_message": [
         "Now for the more interesting moves.",
         "Click the button (or s on your keyboard) until it reads 'Split' and then select your piece and two target squares.",
-        "This move will split the piece into a state of superposition. That means that the piece is in both places at once, and only when collapsing it you'll know where it is with certanty."
+        "This move will split the piece into a state of superposition. That means that the piece is in both places at once, and only when collapsing it you'll know where it is with certainty."
     ]
 }

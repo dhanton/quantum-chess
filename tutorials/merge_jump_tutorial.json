@@ -36,8 +36,8 @@
             "message": [
                 "Good job.",
                 "Notice that merge doesn't completely remove both of the merged kings.",
-                "This is because, in most cases, there is a possibility that one of the kings hasn't merged.",
-                "This is explained in greater detail in the next tutorial, but for now you can collapse the system to find out where the king is."
+                "That is because, unless you merge two pieces that resulted from the same single split, there is a posibility that one of the pieces stays in place.",
+                "You can collapse the system to find out where the king is."
             ],
 
             "valid_moves": {

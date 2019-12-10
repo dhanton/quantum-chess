@@ -1,0 +1,72 @@
+{
+    "board": [
+        ["R", "0", "0", "0"],
+        ["0", "n", "0", "0"],
+        ["0", "0", "0", "0"],
+        ["0", "k", "0", "0"]
+    ],
+
+    "tutorial_steps": [
+        {
+            "message": [
+                "Now try capturing the king farthest away with the rook."
+            ],
+
+            "valid_moves": {
+                "source": ["b1"],
+                "target1": ["a1", "a2"],
+                "target2": ["a1", "a2"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
+                "As you can see, this is a very interesting scenario we haven't seen before.",
+                "Because the only piece blocking the path is the same piece that's being captured the black king is never going to be in the bottom left corner.",
+                "So the rook appears in that corner without breaking double occupancy.",
+                "Now capture the rook with the black knight."
+            ],
+
+            "valid_moves": {
+                "source": ["a4"],
+                "target": ["a1"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "Because the knight is collapsed this move happens with no problem.",
+                "Now let's consider the state king-rook we've created.",
+                "If the rook captured the king originally, then the rook got captured by the knight and neither the rook nor the king exist.",
+                "On the other hand, if the rook didn't capture then the knight didn't capture either and both the rook and the king are alive.",
+                "Collapse the system to see what I mean."
+            ],
+
+            "valid_moves": {
+                "source": ["b3"],
+                "target": ["a1"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "Perfect!",
+                "The state king-rook we've created is one of the bell states because either they're both alive or they're both dead.",
+                "You can run this tutorial again to see both of the posibilities."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        }
+    ],
+
+    "initial_message": [
+        "In this tutorial we're going to use some of the things we've learned to create a very interesting quantum state called the bell state.",
+        "First split the black king towards the left, so that both kings end up in the first column."
+    ]
+}
