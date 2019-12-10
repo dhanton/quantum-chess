@@ -120,7 +120,7 @@ class TutorialQChess(QChess):
                 valid_moves['move_type'] = json_move
 
             #check points have a valid name, are valid and are in bounds
-            possible_point_names = ['source', 'source1', 'source2', 'target', 'target1', 'target2', 'forbidden_target']
+            possible_point_names = ['source', 'source1', 'source2', 'target', 'target1', 'target2', 'forbidden_target', 'required_target']
 
             for point_name in possible_point_names:
                 if point_name in json_valid_moves:
@@ -273,6 +273,7 @@ class TutorialQChess(QChess):
                 if not target in move:
                     return False
 
+            #check target is not forbidden
             if 'forbidden_target' in valid_moves:
                 move = valid_moves['forbidden_target']
 
@@ -344,7 +345,14 @@ class TutorialQChess(QChess):
                 if not target2 in move:
                     return False
 
-            #check targets are not in forbidden target
+            #check at least one of the targets is in required_target
+            if 'required_target' in valid_moves:
+                move = valid_moves['required_target']
+
+                if not target1 in move and not target2 in move:
+                    return False
+
+            #check targets are not forbidden
             if 'forbidden_target' in valid_moves:
                 move = valid_moves['forbidden_target']
 
@@ -419,6 +427,7 @@ class TutorialQChess(QChess):
                 if not target in move:
                     return False
 
+            #check target is not forbidden
             if 'forbidden_target' in valid_moves:
                 move = valid_moves['forbidden_target']
 

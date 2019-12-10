@@ -37,7 +37,7 @@
         {
             "message": [
                 "Good job.",
-                "You can still move the piece after it is collapsed, but now you know where it is for sure."
+                "You can still move the piece after it's collapsed, but now you know where it is for sure."
             ],
 
             "valid_moves": {

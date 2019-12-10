@@ -1,8 +1,8 @@
 {
     "board": [
-        ["0", "R", "0", "0"],
+        ["0", "R", "R", "0"],
         ["0", "0", "0", "0"],
-        ["K", "0", "0", "0"],
+        ["K", "0", "0", "k"],
         ["0", "0", "0", "0"],
         ["0", "0", "0", "0"]
     ],
@@ -10,12 +10,13 @@
     "tutorial_steps": [
         {
             "message": [
-                "Now move the rook downwards to the other side of the board."
+                "Now move the left rook downwards to the other side of the board."
             ],
 
             "valid_moves": {
                 "source": ["a3"],
                 "forbidden_target": ["b2", "b4"],
+                "required_target": ["b3"],
                 "move_type": ["Split"]
             }
         },
@@ -38,6 +39,44 @@
         {
             "message": [
                 "As you can see (right-click) the pieces are not entangled anymore.",
+                "You can also pass through and entangle with a piece of different color.",
+                "To try it out, split the black king in the same way you split the white king."
+            ],
+
+            "valid_moves": {
+                "collapse": true
+            }
+        },
+
+        {
+            "message": [
+                "Now move the right rook downwards to the other side of the board."
+            ],
+
+            "valid_moves": {
+                "source": ["d3"],
+                "forbidden_target": ["c2", "c4"],
+                "required_target": ["c3"],
+                "move_type": ["Split"]
+            }
+        },
+
+        {
+            "message": [
+                "As you can see the pieces are entangled despite being of different color.",
+                "Collapse the system now to break the entanglement."
+            ],
+
+            "valid_moves": {
+                "source": ["c5"],
+                "target": ["c1"],
+                "move_type": ["Standard"]
+            }
+        },
+
+        {
+            "message": [
+                "Good job.",
                 "To summarize, when passing through a piece in a state of superposition you will entangle both pieces and their positions will be dependent.",
                 "When passing through multiple pieces at the same time all pieces will entangle with each other.",
                 "Note that you can also slide through other pieces when performing split or merge, and you will entangle all pieces within both paths."

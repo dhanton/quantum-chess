@@ -2,8 +2,8 @@
     "board": [
         ["0", "0", "0", "0"],
         ["0", "0", "0", "0"],
-        ["0", "0", "K", "0"],
-        ["0", "K", "0", "0"]
+        ["0", "K", "0", "0"],
+        ["K", "0", "0", "0"]
     ],
 
     "tutorial_steps": [
@@ -15,9 +15,9 @@
             ],
 
             "valid_moves": {
-                "source": ["b1"],
-                "target1": ["c2"],
-                "target2": ["b2", "c1"],
+                "source": ["a1"],
+                "target1": ["b2"],
+                "target2": ["a2", "b1"],
                 "move_type": ["Split"]
             }
         },
@@ -29,9 +29,6 @@
             ],
 
             "valid_moves": {
-                "source_piece_type": ["KING"],
-                "target_piece_type": ["KING"],
-                "move_type": ["Standard"],
                 "collapse": true
             }
         },
@@ -44,9 +41,8 @@
             ],
 
             "valid_moves": {
-                "source_piece_type": ["KING"],
-                "source": ["b2", "c1"],
-                "target2": ["c2"],
+                "source": ["a2", "b1"],
+                "target2": ["b2"],
                 "move_type": ["Split"]
             }
         },
