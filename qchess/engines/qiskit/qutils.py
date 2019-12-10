@@ -8,6 +8,8 @@ from qiskit.tools.visualization import plot_histogram
 
 backend = Aer.get_backend('qasm_simulator')
 
+MAX_QUBIT_MEMORY = backend.MAX_QUBIT_MEMORY
+
 b = math.sqrt(2)
 
 iSwap = Operator([

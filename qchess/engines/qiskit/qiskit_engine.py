@@ -19,6 +19,13 @@ class QiskitEngine(BaseEngine):
         NullPiece.qflag = 0
         self.qflag_index = 0
 
+        if width * height > qutils.MAX_QUBIT_MEMORY:
+            print()
+            print('-----------WARNING-----------')
+            print('Maximum number of qubits exceeded')
+            print('You can still try to play the game, but the program might crash')
+            print()
+
         self.generate_circuit()
 
     def generate_circuit(self):
