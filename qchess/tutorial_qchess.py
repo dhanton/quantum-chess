@@ -33,6 +33,8 @@ class TutorialQChess(QChess):
         assert('initial_message' in tutorial_mode)
         assert('tutorial_steps' in tutorial_mode)
 
+        self.tutorial_completed = False
+
         #used to properly format tutorial messages when rendering the board as ascii
         self.is_board_ascii = False
 
@@ -193,6 +195,8 @@ class TutorialQChess(QChess):
 
         super().main_loop(check_current_turn=False, check_game_over=False)
 
+        return self.tutorial_completed
+
     def ascii_main_loop(self):
         self.combined_message += '{}.- {}\n\n'.format(self.step_index + 2, self.initial_message)
         self.step_index += 1
@@ -201,12 +205,15 @@ class TutorialQChess(QChess):
 
         super().ascii_main_loop(check_current_turn=False, check_game_over=False)
 
+        return self.tutorial_completed
+
     def next_step(self):
         self.set_collapse_allowed()
 
         #end the game if we've reached the last step
         if self.step_index == len(self.tutorial_steps):
             self.ended = True
+            self.tutorial_completed = True
 
             msg = 'Tutorial completed.'
             if self.is_board_ascii:
