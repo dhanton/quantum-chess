@@ -42,7 +42,7 @@ Once you're ready to play an actual game
 python main.py --game-mode game_mode_file
 ```
 
-where _game\_mode\_file_ is the game mode filename with no extension or path. The default game mode is [micro_chess](game_modes/micro_chess.json). You can find the rules for the different game modes [game_modes/README](game_modes/README.md).
+where _game\_mode\_file_ is the game mode filename with no extension or path. The default game mode is [micro_chess](game_modes/micro_chess.json). Go to [game_modes/README](game_modes/README.md) to read the rules of each game mode.
 
 Note that some game modes (for example, [chess](game_modes/chess.json)) require more qubits than are possible to simulate classically. A warning will be displayed in such cases, and the program might crash when measuring.
 
