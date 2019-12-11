@@ -60,11 +60,13 @@ def main():
 
             qchess = QChess(0, 0, game_mode=json.load(json_data))
 
+            print('\nRemember to give the program some time if it freezes (simulations may take a while)\n')
+
         if args.ascii_render:
             qchess.ascii_main_loop()
         else:
             qchess.create_window()
-            qchess.main_loop()    
+            qchess.main_loop()
 
 if __name__ == "__main__":
     main()

@@ -42,7 +42,7 @@ class TutorialQChess(QChess):
         self.combined_message = ''
 
         #keeps track of the current step of the tutorial
-        self.step_index = -1
+        self.step_index = 0
 
         #displayed at the start of the tutorial
         self.initial_message = ' '.join(tutorial_mode['initial_message'])
@@ -157,15 +157,13 @@ class TutorialQChess(QChess):
 
     #print formating for the step
     def print_step(self, msg):
-        msg = '{}.- {}'.format(self.step_index + 2, msg)
+        msg = '{}.- {}'.format(self.step_index + 1, msg)
 
         if self.is_board_ascii:
             self.combined_message += msg + '\n\n'
         else:
             print()
             print(msg)
-        
-        self.step_index += 1
 
     def ascii_render(self):
         super().ascii_render()
@@ -198,8 +196,7 @@ class TutorialQChess(QChess):
         return self.tutorial_completed
 
     def ascii_main_loop(self):
-        self.combined_message += '{}.- {}\n\n'.format(self.step_index + 2, self.initial_message)
-        self.step_index += 1
+        self.combined_message += '{}.- {}\n\n'.format(self.step_index + 1, self.initial_message)
 
         self.is_board_ascii = True
 
@@ -208,6 +205,8 @@ class TutorialQChess(QChess):
         return self.tutorial_completed
 
     def next_step(self):
+        self.step_index += 1
+
         self.set_collapse_allowed()
 
         #end the game if we've reached the last step
@@ -229,6 +228,10 @@ class TutorialQChess(QChess):
         self.next_step()
 
     def standard_move(self, source, target):
+        #if collapse is allowed, no other move is valid
+        if self.collapse_allowed:
+            return False
+
         step = self.tutorial_steps[self.step_index]
 
         #if valid_moves in empty, any move is valid
@@ -290,6 +293,10 @@ class TutorialQChess(QChess):
         return False
 
     def split_move(self, source, target1, target2):
+        #if collapse is allowed, no other move is valid
+        if self.collapse_allowed:
+            return False
+
         step = self.tutorial_steps[self.step_index]
 
         #if valid_moves in empty, any move is valid
@@ -372,6 +379,10 @@ class TutorialQChess(QChess):
         return False
 
     def merge_move(self, source1, source2, target):
+        #if collapse is allowed, no other move is valid
+        if self.collapse_allowed:
+            return False
+
         step = self.tutorial_steps[self.step_index]
 
         #if valid_moves in empty, any move is valid

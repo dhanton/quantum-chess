@@ -8,6 +8,5 @@
     ],
 
     "pawn_double_step_allowed": false,
-    "pawn_promotion_allowed": false,
-    "starting_color": "Black"
+    "pawn_promotion_allowed": false
 }

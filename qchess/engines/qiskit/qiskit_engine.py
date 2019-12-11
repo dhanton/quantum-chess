@@ -23,7 +23,7 @@ class QiskitEngine(BaseEngine):
             print()
             print('-----------WARNING-----------')
             print('Maximum number of qubits exceeded')
-            print('You can still try to play the game, but the program might crash')
+            print('You can still play the game, but the program might crash if the system becomes too entangled')
             print()
 
         self.generate_circuit()
