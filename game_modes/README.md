@@ -15,33 +15,33 @@ You can also create your own game modes by copying any of the existing ones, cha
 Good old [chess](https://en.wikipedia.org/wiki/Chess). I included this game mode for educational purposes, but no classical computer will be able to simulate it.
 
 ## King Wars
-![](docs/images/king_wars.png)
+![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/king_wars.png)
 
 * Castling is not allowed
 
 ## Micro Chess
-![](docs/images/micro_chess.png)
+![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/micro_chess.png)
 
 * Castling is allowed
 * Pawn double step is not allowed
 * Promotion is allowed
 
 ## Tall chess
-![](docs/images/tall_chess.png)
+![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/tall_chess.png)
 
 * Castling is allowed
 * Pawn double step is allowed
 * Promotion is allowed
 
 ## Baby chess
-![](docs/images/baby_chess.png)
+![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/baby_chess.png)
 
 * Castling is not allowed
 * Pawn double step is not allowed
 * Promotion is allowed
 
 ## Minit chess
-![](docs/images/minit_chess.png)
+![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/minit_chess.png)
 
 * Castling is allowed
 * Pawn double step is not allowed

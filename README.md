@@ -42,7 +42,9 @@ Once you're ready to play an actual game
 python main.py --game-mode game_mode_file
 ```
 
-where game_mode_file is the game mode filename with no extension or path. The default game mode is [micro_chess](game_modes/micro_chess.json). Note that some game modes (for example, [chess](game_modes/chess.json)) require more qubits than are possible to simulate classically. A warning will be displayed in such cases, and the program might crash when measuring.
+where _game\_mode\_file_ is the game mode filename with no extension or path. The default game mode is [micro_chess](game_modes/micro_chess.json). You can find the rules for the different game modes [game_modes/README](game_modes/README.md).
+
+Note that some game modes (for example, [chess](game_modes/chess.json)) require more qubits than are possible to simulate classically. A warning will be displayed in such cases, and the program might crash when measuring.
 
 ## Running the tests
 
@@ -51,7 +53,7 @@ You can simply run
 python -m unittest discover -s tests --verbose
 ```
 
-from the main directory. Be aware that running all the tests takes about 7 to 10 minutes on an average computer. Go to the tests [README](tests/README.md) to find out why and to see how to tune the parameters to reduce execution time or increase accuracy.
+from the main directory. Be aware that running all the tests takes about 7 to 10 minutes on an average computer. Go to [tests/README](tests/README.md) to find out why and to see how to tune the parameters to reduce execution time or increase accuracy.
 
 
 ## License
