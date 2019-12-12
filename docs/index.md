@@ -6,7 +6,7 @@ layout: default
 
 The implementation of Quantum Chess presented here is based on this [pre-print](https://arxiv.org/abs/1906.05836) by Christopher Cantwell. In his article, Cantwell creates a theoretical framework that describes a family of circuits and logic that can be used to design a quantum version of chess. The paper goes into a lot of detail, and you should definitely check it out if you want to gain deeper insight into this project. 
 
-Basically, there is a qubit for each square of the board. Each of these qubits represents the state of their corresponding square: ground state if the square is empty and excited if it's not. Each square also has associated with it a data structure that holds classical information, such as the type and color of a piece. When you move a piece you're effectively performing a swap gate between their qubits while also changing their classical data.
+Basically, there is a qubit for each square of the board. Each of these qubits represents the state of their corresponding square: ground state if the square is empty and excited if it's not. Each square also has associated with it a data structure that holds classical information, such as the type and color of the piece. When you move a piece you're effectively performing a swap gate between their qubits while also changing their classical data.
 
 Combining both quantum and classical schemes you can create a very elegant and robust quantum version of chess that doesn't require a lot of qubits. With this theoretical framework as the foundation of the project, let's now move on to the goals.
 
@@ -25,7 +25,7 @@ But that's fine! There is still a way to obtain access to a computer with the re
 
 [Qiskit](https://qiskit.org/) was our choice of library to implement the circuits and perform all the simulations.
 
-We have defined our goal: to create a quantum version of chess in such a way that, if we substitute the simulation for a real quantum device, the rest of the program would run just fine. In other words, the classical part of the program has to be scalable with the number of qubits, while the quantum part of the program doesn't.
+We have defined our goal: to create a quantum version of chess in such a way that, if we substitute the simulation for a real quantum device, the rest of the program would run just fine. In other words, the classical part of the program has to be scalable with the number of qubits, even if the quantum simulation doesn't.
 
 # Brief technical detail
 
@@ -42,9 +42,9 @@ To solve this problem we use a combined cnot (which has a known implementation f
 
 ![](https://raw.githubusercontent.com/Dhanton/quantum-chess/master/docs/images/figure_1.png)
 
-_go [here](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_1.png) if you can't see the image_
+These two circuits are equivalent with the appropiate choice of U and U'. In general, this transformation is not trivial, but (as shown in the paper) in our case we know U' for all U used in the project. Notation a) was used throughout the paper, probably because it's more concise and makes more sense conceptually. But notation b) is much easier to implement and as such is the one we've used.
 
-These two circuits are equivalent with the appropiate choice of U and U'. Notation a) was used throughout the paper, probably because it was more concise. But notation b) is easier to implement and as such is the one we've used.
+You can see how all circuits are actually implemented [here](https://github.com/Dhanton/quantum-chess/blob/master/qchess/engines/qiskit/qutils.py).
 
 ## Classical
 
@@ -54,17 +54,15 @@ Effectively what this means is that the quantum simulation is a black box (like 
 
 The following method was devised with these restrictions in mind.
 
-Each piece is assigned a binary string (a qflag) that starts with a single 1 bit in a unique position. So if we had 4 pieces their qflags would be 0001, 0010, 0100 and 1000. Any time we entangle two pieces we perform a binary OR between their flags. So for example entangling the first piece with the last piece would set both of their flags to 1001.
+Each piece is assigned a binary string (that we call qflag) that starts with a single 1 bit in a unique position. So if we had 4 pieces their qflags would be 0001, 0010, 0100 and 1000. Any time we entangle two pieces we perform a binary OR between their qflags. So for example entangling the first piece with the last piece would set both of their flags to 1001.
 
 With this simple idea we can know, without any sort of access to the internal state of the simulation, if two pieces are entangled with each other. Of course we can't know their amplitudes, but we don't need to. 
 
-When one of the pieces needs to be collapsed we simply find all other pieces that have 1s in the same positions (by performing a binary AND) and then we collapse them as well. For example if we wanted to collapse the first piece, we'd instantly know that we also have to collapse the last one (since 1001 AND 1001 != 0).
+When one of the pieces needs to be collapsed we simply find all other pieces that have 1s in the same positions (by performing a binary AND between their qflags) and then we collapse them as well. For example if we wanted to collapse the first piece, we'd instantly know that we also have to collapse the last one (since 1001 AND 1001 != 0). We'd also know that no other piece needs to be collapsed (since 1001 AND 0100 = 0, 1001 AND 0010 = 0).
 
-An example of qflags is shown in figure 2. As you can see, the board is 5x5 and there are 4 unique pieces forming three different pairs. Two of the pieces are entangled (1000 and 0001). One of the pieces is in a state of superposition (0100). And the last piece is collapsed.
+An example of qflags is shown in the following image. As you can see, the board is 5x5 and there are 4 unique pieces forming three different pairs. Two of the pieces are entangled (1000 and 0001). One of the pieces is in a state of superposition (0100). And the last piece is collapsed.
 
 ![](https://raw.githubusercontent.com/Dhanton/quantum-chess/master/docs/images/figure_2.png)
-
-_go [here](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_2.png) if you can't see the image_
 
 Qflags are used to run most of the internal operations of the classical program and also to display entanglement and superposition to the player (you can access it by right-cliking).
 
@@ -76,7 +74,7 @@ Quantum physics is a very, very complicated and counterintuitive field. And ches
 
 And yet, it presents a unique sandbox (even to people with limited technical background) to interact directly with quantum phenomena. In doing so the player can develop a more intuitive understanding of the underlying physical principles. And most of these principles are represented in Quantum Chess (such as superposition, entanglement, collapse, bell states or interference) and come from real quantum systems. Or, at least for now, from their simulations.
 
-In our opinion (and this is the opinion expressed in the [paper](https://arxiv.org/abs/1906.05836) as well), quantum games should not teach you quantum physics directly, but rather let you interact with the quantum world. We think this is usually much more effective and didactic.
+In our opinion (and this is the opinion expressed in the [paper](https://arxiv.org/abs/1906.05836) as well), quantum games should not teach you quantum physics directly, but rather let you interact with the quantum world. We think this is usually a much more effective teaching method.
 
 Although a quantum sandbox sounds exciting, we recommend that players complete the [guided-tutorials](https://github.com/Dhanton/quantum-chess#getting-started) first before playing an actual game of quantum chess.
 
