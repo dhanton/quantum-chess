@@ -43,6 +43,6 @@ Good old [chess](https://en.wikipedia.org/wiki/Chess). I included this game mode
 ## Minit chess
 ![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/minit_chess.png)
 
-* Castling is allowed
+* Castling is not allowed
 * Pawn double step is not allowed
 * Promotion is allowed
