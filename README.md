@@ -62,6 +62,6 @@ This project is licensed under the Apache License 2.0 - see [LICENSE](LICENSE.md
 
 ## Acknowledgments
 
-Most of the mathematical framework this project is based on was developed by Christopher Cantwell in his [pre-print](https://arxiv.org/abs/1906.05836). Some modifications were made to most of the circuits and some of the rules, but the core ideas are all his.
+Most of the mathematical framework this project is based on was developed by Christopher Cantwell in this [pre-print](https://arxiv.org/abs/1906.05836). Some modifications were made to most of the circuits and some of the rules, but the core ideas are all his.
 
 I'd also like to thank Eduardo Bernal and Javier Aguay for multiple discussions and their very helpful feedback on the project.
