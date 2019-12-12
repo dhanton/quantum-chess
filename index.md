@@ -40,7 +40,7 @@ Something else worth mentioning: creating multiple-qubit controlled arbitrary ga
 
 To solve this problem we use a combined cnot (which has a known implementation for any number of qubits) and we apply it before the arbitary gate (that now has an extra qubit of control). This is shown in figure 1b.
 
-![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_1.png)
+![](https://raw.githubusercontent.com/Dhanton/quantum-chess/master/docs/images/figure_1.png)
 
 _go [here](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_1.png) if you can't see the image_
 
@@ -62,7 +62,7 @@ When one of the pieces needs to be collapsed we simply find all other pieces tha
 
 An example of qflags is shown in figure 2. As you can see, the board is 5x5 and there are 4 unique pieces forming three different pairs. Two of the pieces are entangled (1000 and 0001). One of the pieces is in a state of superposition (0100). And the last piece is collapsed.
 
-![](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_2.png)
+![](https://raw.githubusercontent.com/Dhanton/quantum-chess/master/docs/images/figure_2.png)
 
 _go [here](https://github.com/Dhanton/quantum-chess/blob/master/docs/images/figure_2.png) if you can't see the image_
 
