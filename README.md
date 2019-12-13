@@ -1,6 +1,6 @@
 # Quantum Chess
 
-An implementation of quantum chess based on a very interesting [pre-print](https://arxiv.org/abs/1906.05836). You can play any of the multiple [game modes](game_modes/) available, or you can create your own. You can also play the [tutorials](tutorials/) to learn about the rules of the game and quantum physics in general.
+A quantum version of chess based on a very interesting [pre-print](https://arxiv.org/abs/1906.05836). You can play any of the multiple [game modes](game_modes/) available, or you can create your own. You can also play the [tutorials](tutorials/) to learn about the rules of the game and quantum physics in general.
 
 ## Prerequisites
 

@@ -4,7 +4,7 @@ layout: default
 
 # Introduction
 
-The implementation of Quantum Chess presented here is based on this [pre-print](https://arxiv.org/abs/1906.05836) by Christopher Cantwell. In his article, Cantwell creates a theoretical framework that describes a family of circuits and logic that can be used to design a quantum version of chess. The paper goes into a lot of detail, and you should definitely check it out if you want to gain deeper insight into this project. 
+This blogpost presents a quantum version of chess, based on this [pre-print](https://arxiv.org/abs/1906.05836) by Christopher Cantwell. In his article, Cantwell creates a theoretical framework that describes a family of circuits and logic that can be used to design and implement quantum chess. The paper goes into a lot of detail, and you should definitely check it out if you want to gain deeper insight into this project. 
 
 Basically, there is a qubit for each square of the board. Each of these qubits represents the state of their corresponding square: ground state if the square is empty and excited if it's not. Each square also has associated with it a data structure that holds classical information, such as the type and color of the piece. When you move a piece you're effectively performing a swap gate between their qubits while also changing their classical data.
 
