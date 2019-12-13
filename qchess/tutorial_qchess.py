@@ -165,6 +165,14 @@ class TutorialQChess(QChess):
             print()
             print(msg)
 
+    def print_tutorial_completed(self):
+        msg = 'Tutorial completed.'
+        if self.is_board_ascii:
+            self.combined_message += msg
+        else:
+            print('\n' + msg)
+
+
     def ascii_render(self):
         super().ascii_render()
 
@@ -214,18 +222,15 @@ class TutorialQChess(QChess):
             self.ended = True
             self.tutorial_completed = True
 
-            msg = 'Tutorial completed.'
-            if self.is_board_ascii:
-                self.combined_message += msg
-            else:
-                print('\n' + msg)
-
     def collapse_board(self):
         super().collapse_board()
 
-        self.print_step(self.tutorial_steps[self.step_index]['message'])
-        
         self.next_step()
+        
+        self.print_step(self.tutorial_steps[self.step_index - 1]['message'])
+
+        if self.tutorial_completed:
+                self.print_tutorial_completed()
 
     def standard_move(self, source, target):
         #if collapse is allowed, no other move is valid
@@ -284,9 +289,12 @@ class TutorialQChess(QChess):
                     return False
 
         if super().standard_move(source, target):
+            self.next_step()
+
             self.print_step(step['message'])
 
-            self.next_step()
+            if self.tutorial_completed:
+                self.print_tutorial_completed()
 
             return True
 
@@ -370,9 +378,12 @@ class TutorialQChess(QChess):
                     return False
 
         if super().split_move(source, target1, target2):
+            self.next_step()
+
             self.print_step(step['message'])
 
-            self.next_step()
+            if self.tutorial_completed:
+                self.print_tutorial_completed()
 
             return True
 
@@ -446,9 +457,12 @@ class TutorialQChess(QChess):
                     return False
 
         if super().merge_move(source1, source2, target):
+            self.next_step()
+
             self.print_step(step['message'])
 
-            self.next_step()
+            if self.tutorial_completed:
+                self.print_tutorial_completed()
 
             return True
 

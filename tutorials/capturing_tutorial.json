@@ -10,7 +10,7 @@
         {
             "message": [
                 "Now that the white king is split, try to capture the black king.",
-                "(You'll have to choose one of the splits)"
+                "(You'll have to choose one of the splits)."
             ],
 
             "valid_moves": {
